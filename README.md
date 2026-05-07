@@ -39,6 +39,7 @@ Optional backend environment:
 - `RAPIDAPI_KEY`
 - `RAPIDAPI_HOST`
 - `GITHUB_TOKEN` - enables AI portfolio insights through GitHub Models
+- `GITHUB_MODEL` - optional GitHub Models model ID, defaults to `openai/gpt-4.1`
 
 ## Frontend Setup
 
@@ -82,7 +83,7 @@ npm run dev
 - `/user/holdings` - authenticated holdings CRUD
 - `/schemes` - DB-backed scheme metadata
 - `/api/mf` - mutual fund NAV lookup
-- `/api/portfolioInsight` - AI portfolio summary through GitHub Models
+- `/api/portfolioInsight` - structured AI portfolio insight cards through GitHub Models
 
 ## Deployment Notes
 

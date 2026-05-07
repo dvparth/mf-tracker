@@ -7,13 +7,14 @@ import '../components/styles/common.css';
 import Tooltip from '@mui/material/Tooltip';
 import Switch from '@mui/material/Switch';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import { Suspense } from 'react';
 import BackToTop from './BackToTop';
 import './styles/header.css';
-import { parseDMY, formatDMY, findNearestEntry, monthLabelShort } from '../utils/formatters';
+import { parseDMY, formatDMY, findNearestEntry, monthLabelShort, toTitleCase } from '../utils/formatters';
 import { fetchSchemeDataUsingAdapter } from '../adapters/mfAdapters';
 
 const SummaryCard = React.lazy(() => import('./SummaryCard'));
@@ -27,18 +28,31 @@ export default function MFTracker({ user, darkMode, setDarkMode }) {
     const [visibleCount, setVisibleCount] = useState(8);
     // UI state for scrolling helpers (declare before any early returns)
     const topRef = useRef(null);
-    const [aiSummary, setAiSummary] = useState('');
+    const latestPortfolioStateRef = useRef(null);
+    const [aiInsight, setAiInsight] = useState(null);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiRefreshing, setAiRefreshing] = useState(false);
+    const [aiError, setAiError] = useState(null);
 
 
     // Adapter selection is now handled by REACT_APP_DATA_ADAPTER env var in mfAdapters.js
 
     const [manualLoading, setManualLoading] = useState(false);
 
-    const fetchAISummary = async (portfolioState) => {
+    const fetchAIInsight = async (portfolioState, { refresh = false } = {}) => {
+        if (!portfolioState) return;
+        setAiError(null);
+        if (refresh) {
+            setAiRefreshing(true);
+        } else {
+            setAiLoading(true);
+        }
+
         try {
             const backend = process.env.REACT_APP_BACKEND_URL || '';
             const requestBody = {
-                portfolio: portfolioState
+                portfolio: portfolioState,
+                ...(refresh ? { refresh: true } : {})
             };
             const response = await fetch(`${backend}/api/portfolioInsight`, {
                 method: 'POST',
@@ -48,17 +62,19 @@ export default function MFTracker({ user, darkMode, setDarkMode }) {
             });
             if (response.ok) {
                 const data = await response.json();
-                console.log('AI Summary API response:', data);
-                setAiSummary(data.insight || 'No summary available');
+                setAiInsight(data);
             } else {
                 // Handle error responses with specific messages
                 const errorData = await response.json().catch(() => ({}));
                 const errorMessage = errorData.message || errorData.error || 'Failed to load AI summary';
-                
-                setAiSummary(errorMessage);
+
+                setAiError(errorMessage);
             }
         } catch (err) {
-            setAiSummary('Error loading AI summary');
+            setAiError('Error loading AI summary');
+        } finally {
+            setAiLoading(false);
+            setAiRefreshing(false);
         }
     };
 
@@ -76,7 +92,8 @@ export default function MFTracker({ user, darkMode, setDarkMode }) {
             const results = await fetchSchemeDataUsingAdapter(tracked);
             // Create a lookup map for results by schemeCode (results may be in different order)
             const resultsMap = {};
-            results.forEach(result => {
+            const safeResults = Array.isArray(results) ? results : [];
+            safeResults.forEach(result => {
                 if (result && result.schemeCode) {
                     resultsMap[result.schemeCode] = result;
                 }
@@ -203,7 +220,8 @@ export default function MFTracker({ user, darkMode, setDarkMode }) {
                     latestDate: r.latestDate || null,
                 }))
             };
-            fetchAISummary(portfolioState);
+            latestPortfolioStateRef.current = portfolioState;
+            fetchAIInsight(portfolioState);
         }
     }, [loading, error, rows]);
 
@@ -309,6 +327,41 @@ export default function MFTracker({ user, darkMode, setDarkMode }) {
     // reduce JS work and improve Total Blocking Time. User can expand to load more.
     const visibleRows = sortedRows.slice(0, visibleCount);
 
+    const aiCards = Array.isArray(aiInsight?.cards) ? aiInsight.cards : [];
+    const schemeNameMap = sortedRows.reduce((acc, row) => {
+        acc[String(row.scheme_code)] = row.scheme_name;
+        return acc;
+    }, {});
+    const formatRelatedSchemeName = (schemeCode) => {
+        const rawName = schemeNameMap[String(schemeCode)];
+        if (!rawName) return `Code ${schemeCode}`;
+        const cleanedName = toTitleCase(rawName)
+            .replace(/\bIdcw\b/g, 'IDCW')
+            .replace(/\bSip\b/g, 'SIP')
+            .replace(/\bEtf\b/g, 'ETF')
+            .replace(/\bNfo\b/g, 'NFO')
+            .replace(/\bDirect\b/g, 'Direct')
+            .replace(/\bGrowth\b/g, 'Growth');
+        return cleanedName;
+    };
+    const severitySx = {
+        positive: {
+            borderColor: 'rgba(46, 125, 50, 0.25)',
+            backgroundColor: 'rgba(46, 125, 50, 0.06)',
+            color: '#2e7d32'
+        },
+        neutral: {
+            borderColor: 'rgba(25, 118, 210, 0.22)',
+            backgroundColor: 'rgba(25, 118, 210, 0.06)',
+            color: '#1976d2'
+        },
+        caution: {
+            borderColor: 'rgba(237, 108, 2, 0.28)',
+            backgroundColor: 'rgba(237, 108, 2, 0.07)',
+            color: '#ed6c02'
+        }
+    };
+
 
 
 
@@ -351,11 +404,64 @@ export default function MFTracker({ user, darkMode, setDarkMode }) {
                 </Suspense>
 
                 {/* AI Summary Section */}
-                <Box sx={{ p: '2px', background: 'linear-gradient(135deg, #ff0000 0%, #ff7f00 14%, #ffff00 28%, #00ff00 42%, #0000ff 57%, #4b0082 71%, #9400d3 85%)', borderRadius: 2, mb: 1.25, boxShadow: '0 0 10px rgba(255,0,0,0.6), 0 0 15px rgba(255,127,0,0.5), 0 0 20px rgba(255,255,0,0.4), 0 0 25px rgba(0,255,0,0.3), 0 0 30px rgba(0,0,255,0.2)' }}>
-                    <Card elevation={4} sx={(theme) => ({ background: theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff', boxShadow: theme.palette.mode === 'dark' ? '0 6px 18px rgba(0,0,0,0.6)' : '0 6px 18px rgba(31,42,68,0.05)', border: theme.palette.mode === 'dark' ? '1px solid rgba(255,255,255,0.03)' : '1px solid rgba(255,255,255,0.12)' })}>
-                        <CardContent sx={{ py: 1, px: { xs: 1.25, sm: 2 } }}>
-                            <Typography component="h2" sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, color: 'text.primary', fontWeight: 900, mb: 1 }}>AI Summary</Typography>
-                            <Typography sx={{ fontSize: '0.9rem', color: 'text.primary', lineHeight: 1.5 }}>{aiSummary || 'Loading AI summary...'}</Typography>
+                <Box sx={{ mb: 1.25 }}>
+                    <Card elevation={4} sx={(theme) => ({ background: theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff', boxShadow: theme.palette.mode === 'dark' ? '0 6px 18px rgba(0,0,0,0.6)' : '0 6px 18px rgba(31,42,68,0.05)', border: theme.palette.mode === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(15,23,36,0.08)' })}>
+                        <CardContent sx={{ py: 1.25, px: { xs: 1.25, sm: 2 } }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                                <Box>
+                                    <Typography component="h2" sx={{ fontSize: { xs: '0.95rem', sm: '1.05rem' }, color: 'text.primary', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                                        <AutoAwesomeIcon fontSize="small" /> AI Insights
+                                    </Typography>
+                                    <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', mt: 0.2 }}>AI-generated portfolio observations, not financial advice.</Typography>
+                                </Box>
+                                <LoadingButton
+                                    aria-label="Refresh AI insights"
+                                    onClick={() => fetchAIInsight(latestPortfolioStateRef.current, { refresh: true })}
+                                    startIcon={<RefreshIcon />}
+                                    size="small"
+                                    loading={aiRefreshing}
+                                    disabled={!latestPortfolioStateRef.current || aiLoading}
+                                >
+                                    Refresh AI
+                                </LoadingButton>
+                            </Box>
+
+                            {aiLoading && !aiInsight ? (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.75 }}>
+                                    <CircularProgress size={16} />
+                                    <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>Loading AI insights...</Typography>
+                                </Box>
+                            ) : null}
+
+                            {aiError ? (
+                                <Typography sx={{ fontSize: '0.85rem', color: 'error.main', lineHeight: 1.45, mb: aiInsight ? 1 : 0 }}>{aiError}</Typography>
+                            ) : null}
+
+                            {aiInsight?.summary ? (
+                                <Typography sx={{ fontSize: '0.9rem', color: 'text.primary', lineHeight: 1.5, fontWeight: 700, mb: 1 }}>{aiInsight.summary}</Typography>
+                            ) : null}
+
+                            {aiCards.length ? (
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 1 }}>
+                                    {aiCards.map((card, idx) => {
+                                        const styles = severitySx[card.severity] || severitySx.neutral;
+                                        return (
+                                            <Box key={`${card.type}-${idx}`} sx={{ border: '1px solid', borderColor: styles.borderColor, backgroundColor: styles.backgroundColor, borderRadius: 1, p: 1 }}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                                    <Typography sx={{ fontSize: '0.82rem', color: 'text.primary', fontWeight: 900 }}>{card.title}</Typography>
+                                                    <Typography sx={{ fontSize: '0.62rem', color: styles.color, fontWeight: 900, textTransform: 'uppercase' }}>{card.type}</Typography>
+                                                </Box>
+                                                <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary', lineHeight: 1.45 }}>{card.message}</Typography>
+                                                {Array.isArray(card.relatedSchemes) && card.relatedSchemes.length ? (
+                                                    <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', mt: 0.65 }}>Related: {card.relatedSchemes.map(formatRelatedSchemeName).join(', ')}</Typography>
+                                                ) : null}
+                                            </Box>
+                                        );
+                                    })}
+                                </Box>
+                            ) : (!aiLoading && !aiError ? (
+                                <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>No AI insights available.</Typography>
+                            ) : null)}
                         </CardContent>
                     </Card>
                 </Box>

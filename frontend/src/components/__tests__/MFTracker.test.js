@@ -51,6 +51,26 @@ describe('MFTracker', () => {
             if (typeof input === 'string' && input.endsWith('/user/holdings')) {
                 return Promise.resolve({ ok: true, json: () => Promise.resolve({ holdings: schemes.map(s => ({ scheme_code: s.scheme_code, principal: s.principal, unit: s.unit })) }) });
             }
+            if (typeof input === 'string' && input.endsWith('/api/portfolioInsight')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        summary: 'Portfolio is positive overall.',
+                        cards: [
+                            {
+                                type: 'performance',
+                                title: 'Positive return',
+                                severity: 'positive',
+                                message: 'The test portfolio is showing gains.',
+                                relatedSchemes: [147946]
+                            }
+                        ],
+                        provider: 'github',
+                        model: 'openai/gpt-4.1',
+                        portfolioHash: 'testhash'
+                    })
+                });
+            }
             return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
         });
 
@@ -70,7 +90,7 @@ describe('MFTracker', () => {
         // The important thing is that the component renders correctly with batch API
 
         // Refresh button toggles load again (smoke test) - the button has label 'Refresh'
-        const refreshBtn = screen.getByRole('button', { name: /Refresh/i });
+        const refreshBtn = screen.getByRole('button', { name: /Refresh data/i });
         userEvent.click(refreshBtn);
 
         // After clicking refresh, progress indicator may appear; ensure it resolves

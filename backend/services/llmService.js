@@ -19,7 +19,13 @@ function getGitHubModel(modelOverride = null) {
 
 function buildPortfolioPrompt(portfolioDetails) {
   const portfolioJson = JSON.stringify(portfolioDetails, null, 2);
-  return `Analyze this Indian mutual fund portfolio JSON and produce a concise investor-facing summary:\n${portfolioJson}`;
+  return [
+    'Analyze this Indian mutual fund portfolio JSON.',
+    'Return only valid JSON with this exact shape:',
+    '{"summary":"Short overall portfolio summary","cards":[{"type":"performance|concentration|risk|watchpoint","title":"Short card title","severity":"positive|neutral|caution","message":"Plain-English explanation","relatedSchemes":[123456]}]}',
+    'Create 3 to 5 cards. Use only facts visible in the JSON. Do not recommend buying, selling, switching, redeeming, or adding money.',
+    `Portfolio JSON:\n${portfolioJson}`,
+  ].join('\n');
 }
 
 function buildPortfolioSystemPrompt() {
@@ -27,8 +33,7 @@ function buildPortfolioSystemPrompt() {
     'You are a financial analyst specializing in Indian mutual funds.',
     'Write a concise plain-English summary for the provided portfolio JSON.',
     'Focus on total profit/loss in INR, best and worst performing schemes, one-day movement, and concentration risk.',
-    'Limit the response to 4 short lines.',
-    'Do not use markdown, bullets, or bold formatting.',
+    'Return valid JSON only. Do not wrap it in markdown fences.',
     'Do not provide personalized buy/sell instructions.',
   ].join(' ');
 }
@@ -51,7 +56,7 @@ async function callGitHubModel({
   prompt,
   systemPrompt = null,
   modelOverride = null,
-  maxTokens = 260,
+  maxTokens = 900,
   temperature = 0.4,
 }) {
   if (!process.env.GITHUB_TOKEN) {
@@ -80,6 +85,7 @@ async function callGitHubModel({
       messages,
       temperature,
       max_tokens: maxTokens,
+      response_format: { type: 'json_object' },
     }),
   });
 
