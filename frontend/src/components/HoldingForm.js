@@ -5,13 +5,17 @@ import Box from '@mui/material/Box';
 import LoadingButton from './LoadingButton';
 import FeedbackSnackbar from './FeedbackSnackbar';
 import Autocomplete from '@mui/material/Autocomplete';
+import CircularProgress from '@mui/material/CircularProgress';
+import { toTitleCase } from '../utils/formatters';
 
 // Runtime-safe fallbacks in case imports fail to resolve
 const SafeLoadingButton = (typeof LoadingButton === 'undefined' || LoadingButton === null) ? (({ children, ...p }) => <Button {...p}>{children}</Button>) : LoadingButton;
 const SafeFeedbackSnackbar = (typeof FeedbackSnackbar === 'undefined' || FeedbackSnackbar === null) ? (({ open, message }) => open ? <div style={{ position: 'fixed', bottom: 8, left: '50%', transform: 'translateX(-50%)', background: '#333', color: '#fff', padding: '8px 12px', borderRadius: 6 }}>{message}</div> : null) : FeedbackSnackbar;
 
 export default function HoldingForm({ onSaved, editing = null, onCancel = null }) {
-    // No longer load schemes from backend; adapters or user-entered codes are used.
+    const [schemes, setSchemes] = useState([]);
+    const [schemesLoading, setSchemesLoading] = useState(false);
+    const [schemesError, setSchemesError] = useState('');
     const [selected, setSelected] = useState(null);
     const [inputValue, setInputValue] = useState('');
     const [principal, setPrincipal] = useState('');
@@ -19,38 +23,77 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
     const [loading, setLoading] = useState(false);
     const [snack, setSnack] = useState(null);
 
+    const formatSchemeName = (name) => toTitleCase(name || '')
+        .replace(/\bIdcw\b/g, 'IDCW')
+        .replace(/\bSip\b/g, 'SIP')
+        .replace(/\bEtf\b/g, 'ETF')
+        .replace(/\bNfo\b/g, 'NFO');
+
+    const getSchemeLabel = (scheme) => {
+        if (!scheme || typeof scheme !== 'object') return '';
+        const name = formatSchemeName(scheme.scheme_name);
+        return name ? `${name} (${scheme.scheme_code})` : `Code ${scheme.scheme_code}`;
+    };
+
+    useEffect(() => {
+        if (editing) return undefined;
+        const query = inputValue.trim();
+        if (query.length < 2) {
+            setSchemes([]);
+            setSchemesError('');
+            setSchemesLoading(false);
+            return undefined;
+        }
+
+        let cancelled = false;
+        const timeoutId = window.setTimeout(async () => {
+            setSchemesLoading(true);
+            setSchemesError('');
+            try {
+                const params = new URLSearchParams({ q: query });
+                const res = await fetch((process.env.REACT_APP_BACKEND_URL || '') + `/schemes?${params.toString()}`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Unable to load fund list');
+                const json = await res.json();
+                const list = Array.isArray(json.schemes) ? json.schemes : [];
+                if (!cancelled) setSchemes(list.filter(s => s && s.scheme_code && s.scheme_name));
+            } catch (e) {
+                if (!cancelled) setSchemesError(e.message || 'Unable to load fund list');
+            } finally {
+                if (!cancelled) setSchemesLoading(false);
+            }
+        }, 250);
+
+        return () => {
+            cancelled = true;
+            window.clearTimeout(timeoutId);
+        };
+    }, [inputValue, editing]);
+
     // When editing prop is provided, populate the form fields
     useEffect(() => {
         if (editing) {
             // editing.principal/unit may be numbers; ensure strings for controlled inputs
-            setInputValue(editing.scheme_code ? String(editing.scheme_code) : '');
-            setSelected(null); // clear any selected object when editing
+            const matchingScheme = schemes.find(s => Number(s.scheme_code) === Number(editing.scheme_code));
+            setSelected(matchingScheme || null);
+            const matchingName = matchingScheme?.scheme_name ? `${formatSchemeName(matchingScheme.scheme_name)} (${matchingScheme.scheme_code})` : '';
+            const editingName = editing.scheme_name ? `${formatSchemeName(editing.scheme_name)} (${editing.scheme_code})` : '';
+            setInputValue(matchingName || editingName || (editing.scheme_code ? `Code ${editing.scheme_code}` : ''));
             setPrincipal(editing.principal !== undefined && editing.principal !== null ? String(editing.principal) : '');
             setUnit(editing.unit !== undefined && editing.unit !== null ? String(editing.unit) : '');
         }
-    }, [editing]);
+    }, [editing, schemes]);
 
     const save = async () => {
         // client-side validation
-        if (!inputValue && !(selected && selected.scheme_code) && !editing) {
-            setSnack({ severity: 'error', message: 'Enter a scheme code or select a scheme' });
+        if (!editing && !(selected && selected.scheme_code)) {
+            setSnack({ severity: 'error', message: 'Select a fund from the list' });
             return;
         }
         if (!principal && !unit) {
             setSnack({ severity: 'error', message: 'Enter principal or units' });
             return;
         }
-        // Determine scheme_code from selected option or free-form input
-        let schemeCode = null;
-        if (selected && typeof selected === 'object' && selected.scheme_code) schemeCode = Number(selected.scheme_code);
-        if (!schemeCode) {
-            // try to parse numeric code from inputValue or selected if it's a primitive
-            const candidate = (typeof inputValue === 'string' && inputValue.trim()) ? inputValue.trim() : (selected && typeof selected === 'string' ? selected : null);
-            if (candidate) {
-                const parsed = Number(candidate.replace(/[^0-9]/g, ''));
-                if (Number.isFinite(parsed)) schemeCode = parsed;
-            }
-        }
+        const schemeCode = editing ? Number(editing.scheme_code) : Number(selected.scheme_code);
         if (!schemeCode) return;
         const payload = { holdings: [{ scheme_code: schemeCode, principal: Number(principal || 0), unit: Number(unit || 0) }] };
         setLoading(true);
@@ -91,18 +134,58 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
 
     return (
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'stretch', mb: 1, flexDirection: { xs: 'column', sm: 'row' } }}>
-            <Autocomplete
-                freeSolo
-                options={[]}
-                getOptionLabel={(o) => (o && typeof o === 'object') ? (o.scheme_name ? `${o.scheme_name} (${o.scheme_code})` : String(o.scheme_code)) : String(o)}
-                value={selected}
-                inputValue={inputValue}
-                onInputChange={(e, v) => setInputValue(v)}
-                onChange={(e, v) => setSelected(v)}
-                sx={{ minWidth: 120, flex: '1 1 0', display: 'flex', alignItems: 'stretch', width: '100%' }}
-                disabled={!!editing}
-                renderInput={(params) => <TextField {...params} label="Scheme (code or name)" size="small" fullWidth />}
-            />
+            {editing ? (
+                <TextField
+                    label="Fund name"
+                    size="small"
+                    value={inputValue}
+                    disabled
+                    fullWidth
+                    helperText="Fund cannot be changed while editing"
+                    sx={{ minWidth: 120, flex: '1 1 0' }}
+                />
+            ) : (
+                <Autocomplete
+                    options={schemes}
+                    loading={schemesLoading}
+                    noOptionsText={inputValue.trim().length < 2 ? 'Type at least 2 characters' : 'No matching funds found'}
+                    getOptionLabel={getSchemeLabel}
+                    isOptionEqualToValue={(option, value) => Number(option?.scheme_code) === Number(value?.scheme_code)}
+                    filterOptions={(options, state) => {
+                        const query = state.inputValue.trim().toLowerCase();
+                        if (!query) return options.slice(0, 25);
+                        return options.filter((option) => {
+                            const name = String(option.scheme_name || '').toLowerCase();
+                            const code = String(option.scheme_code || '');
+                            return name.includes(query) || code.includes(query);
+                        }).slice(0, 25);
+                    }}
+                    value={selected}
+                    inputValue={inputValue}
+                    onInputChange={(e, v) => setInputValue(v)}
+                    onChange={(e, v) => setSelected(v)}
+                    sx={{ minWidth: 120, flex: '1 1 0', display: 'flex', alignItems: 'stretch', width: '100%' }}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label="Fund name"
+                            size="small"
+                            fullWidth
+                            error={!!schemesError}
+                            helperText={schemesError || 'Type to search and select a matching fund'}
+                            InputProps={{
+                                ...params.InputProps,
+                                endAdornment: (
+                                    <>
+                                        {schemesLoading ? <CircularProgress color="inherit" size={16} /> : null}
+                                        {params.InputProps.endAdornment}
+                                    </>
+                                )
+                            }}
+                        />
+                    )}
+                />
+            )}
             <TextField size="small" label="Principal" value={principal} onChange={(e) => setPrincipal(e.target.value)} fullWidth sx={{ minWidth: 120, flex: '1 1 0' }} />
             <TextField size="small" label="Units" value={unit} onChange={(e) => setUnit(e.target.value)} fullWidth sx={{ minWidth: 120, flex: '1 1 0' }} />
             <SafeLoadingButton variant="contained" size="small" onClick={save} loading={loading} sx={{ alignSelf: { xs: 'stretch', sm: 'center' }, height: { xs: '40px', sm: 'auto' } }}>{editing ? 'Save changes' : 'Save'}</SafeLoadingButton>

@@ -32,7 +32,6 @@ export default function HoldingsPage() {
             if (res.ok) {
                 const json = await res.json();
                 setHoldings(json.holdings || []);
-                console.log("holdings loaded", json)
             }
         } catch (e) {
             // ignore
@@ -97,7 +96,7 @@ export default function HoldingsPage() {
 
     const startEdit = (h) => {
         // Initialize editable fields as strings so TextField (controlled) shows values
-        setEditing({ ...h, principal: h.principal !== undefined && h.principal !== null ? String(h.principal) : '', unit: h.unit !== undefined && h.unit !== null ? String(h.unit) : '' });
+        setEditing({ ...h, scheme_name: schemesMap[h.scheme_code] || '', principal: h.principal !== undefined && h.principal !== null ? String(h.principal) : '', unit: h.unit !== undefined && h.unit !== null ? String(h.unit) : '' });
     };
 
     return (
