@@ -13,8 +13,12 @@ const backendRequestCache = new Map();
 export async function fetchSchemeDataUsingAdapter(schemeOrSchemes) {
     const isArray = Array.isArray(schemeOrSchemes);
     const schemes = isArray ? schemeOrSchemes : [schemeOrSchemes];
-    const codes = schemes.map(s => String(s.scheme_code));
+    const codes = schemes.map(s => s && s.scheme_code !== undefined && s.scheme_code !== null ? String(s.scheme_code) : '').filter(Boolean);
     const adapter = process.env.REACT_APP_DATA_ADAPTER || 'mfapi'; // default to mfapi
+
+    if (codes.length === 0) {
+        return isArray ? [] : null;
+    }
 
     // Create cache key for the batch
     const cacheKey = `${adapter}-${codes.sort().join(',')}`;

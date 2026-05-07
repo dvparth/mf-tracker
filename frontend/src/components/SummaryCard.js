@@ -1,59 +1,122 @@
 import React from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import { fmtRoundUp, dateShort } from '../utils/formatters';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import SavingsIcon from '@mui/icons-material/Savings';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import Tooltip from '@mui/material/Tooltip';
+import { alpha } from '@mui/material/styles';
+import { dateShort, formatCurrency, formatPercent } from '../utils/formatters';
 
-export default function SummaryCard({ id, totals, latestDate, month1Label, month2Label, month3Label }) {
-    const changeVal = totals.prevDelta;
-    const changeText = changeVal > 0 ? 'success.main' : changeVal < 0 ? 'error.main' : 'text.secondary';
-    const totalsPrevDeltaPct = totals.month1 ? (totals.prevDelta / totals.month1) * 100 : null;
+function HelpLabel({ label, help }) {
+    return (
+        <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.45 }}>
+            <Typography sx={{ color: 'text.secondary', fontSize: 12, fontWeight: 750 }}>{label}</Typography>
+            {help ? (
+                <Tooltip title={help}>
+                    <InfoOutlinedIcon sx={{ color: 'text.secondary', fontSize: 15 }} />
+                </Tooltip>
+            ) : null}
+        </Box>
+    );
+}
+
+function MetricTile({ label, value, helper, tone = 'default', icon, help }) {
+    const toneColor = tone === 'positive' ? 'success.main' : tone === 'negative' ? 'error.main' : 'text.primary';
 
     return (
-        <Card id={id} component="section" aria-label="summary-card" elevation={4} sx={(theme) => ({ mb: 1.25, borderRadius: 2, background: theme.palette.mode === 'dark' ? theme.palette.background.paper : 'linear-gradient(135deg,#ffffff,#eef6ff)', boxShadow: theme.palette.mode === 'dark' ? '0 6px 18px rgba(0,0,0,0.6)' : '0 6px 18px rgba(31,42,68,0.05)' })}>
-            <CardContent sx={{ py: 1, px: { xs: 1.25, sm: 2 } }}>
-                <Grid container spacing={2} alignItems="center" sx={{ columnGap: 4, justifyContent: 'space-between' }}>
-                    <Grid item xs={12} sm={7} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', minHeight: 64, pr: { sm: 2 } }}>
-                        <Typography component="h2" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' }, color: 'text.secondary' }}>Current Value</Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                            <Typography noWrap sx={{ fontWeight: 900, fontSize: { xs: '1.3rem', sm: '1.6rem' }, color: 'text.primary', lineHeight: 1 }}>{`₹${fmtRoundUp(totals.marketValue)}`}</Typography>
+        <Box sx={(theme) => ({
+            p: { xs: 1.5, sm: 2 },
+            borderRadius: 2,
+            backgroundColor: alpha('#ffffff', 0.72),
+            border: `1px solid ${alpha('#cbd5e1', 0.75)}`,
+            minWidth: 0
+        })}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, mb: 1 }}>
+                <HelpLabel label={label} help={help} />
+                <Box sx={{ color: toneColor, display: 'inline-flex' }}>{icon}</Box>
+            </Box>
+            <Typography sx={{ color: toneColor, fontSize: { xs: 18, sm: 21 }, fontWeight: 900, lineHeight: 1.1, wordBreak: 'break-word' }}>{value}</Typography>
+            {helper ? <Typography sx={{ color: 'text.secondary', fontSize: 12, mt: 0.75 }}>{helper}</Typography> : null}
+        </Box>
+    );
+}
+
+export default function SummaryCard({ id, totals, latestDate, month1Label, month2Label, month3Label }) {
+    const oneDayPct = totals.month1 ? (totals.prevDelta / totals.month1) * 100 : null;
+    const returnPct = totals.principal ? (totals.profit / totals.principal) * 100 : null;
+    const positiveReturn = Number(totals.profit) >= 0;
+    const positiveDay = Number(totals.prevDelta) >= 0;
+    const trendIcon = positiveDay ? <TrendingUpIcon fontSize="small" /> : <TrendingDownIcon fontSize="small" />;
+    const estimatedTrendHelp = 'Estimated value of your current units on past dates using the nearest available NAV. This is not actual historical portfolio value if you bought or sold units during the period.';
+
+    return (
+        <Card id={id} component="section" aria-label="portfolio summary" sx={{ mb: 2.5, overflow: 'hidden', borderRadius: 3 }}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1.2fr) minmax(320px, 0.8fr)' }, gap: { xs: 2, md: 3 }, alignItems: 'stretch' }}>
+                    <Box sx={(theme) => ({
+                        p: { xs: 2, sm: 3 },
+                        borderRadius: 3,
+                        color: '#ffffff',
+                        background: 'linear-gradient(135deg, #101828 0%, #2755e7 56%, #0f766e 100%)',
+                        boxShadow: '0 22px 52px rgba(15, 23, 42, 0.20)'
+                    })}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'flex-start', mb: 3 }}>
+                            <Box>
+                                <Typography sx={{ color: alpha('#ffffff', 0.72), fontSize: 13, fontWeight: 750 }}>Current value</Typography>
+                                <Typography component="h2" sx={{ fontSize: { xs: 34, sm: 44 }, fontWeight: 950, lineHeight: 1.02, mt: 0.75, letterSpacing: 0 }}>
+                                    {formatCurrency(totals.marketValue)}
+                                </Typography>
+                            </Box>
+                            <Box sx={{ px: 1.25, py: 0.75, borderRadius: 999, backgroundColor: alpha('#ffffff', 0.14), color: alpha('#ffffff', 0.86), fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap' }}>
+                                {latestDate ? dateShort(latestDate) : 'Latest NAV'}
+                            </Box>
                         </Box>
-                        <Box sx={{ mt: 0.5 }}>
-                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
-                                <Typography sx={{ fontSize: '0.64rem', color: 'text.secondary', fontWeight: 700 }}>Invested</Typography>
-                                <Typography sx={{ fontSize: '0.72rem', color: 'text.primary', fontWeight: 800 }}>₹{fmtRoundUp(totals.principal)}</Typography>
+
+                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 1.25 }}>
+                            <Box>
+                                <Typography sx={{ color: alpha('#ffffff', 0.68), fontSize: 12 }}>Money invested</Typography>
+                                <Typography sx={{ color: '#ffffff', fontSize: 18, fontWeight: 850 }}>{formatCurrency(totals.principal)}</Typography>
                             </Box>
-                            <Box sx={{ mt: 0.25, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography sx={{ fontSize: '0.64rem', color: changeText, fontWeight: 700 }}>{totals.prevDelta !== null ? `₹${fmtRoundUp(totals.prevDelta)}` : '-'}</Typography>
-                                <Typography sx={{ fontSize: '0.62rem', color: changeText }}>{totalsPrevDeltaPct !== null ? `(${totalsPrevDeltaPct.toFixed(2)}%)` : ''}</Typography>
-                                <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>{latestDate ? dateShort(latestDate) : ''}</Typography>
+                            <Box>
+                                <Typography sx={{ color: alpha('#ffffff', 0.68), fontSize: 12 }}>Total gain/loss</Typography>
+                                <Typography sx={{ color: positiveReturn ? '#86efac' : '#fecaca', fontSize: 18, fontWeight: 850 }}>
+                                    {formatCurrency(totals.profit)} {returnPct !== null ? `(${formatPercent(returnPct)})` : ''}
+                                </Typography>
                             </Box>
-                        </Box>
-                    </Grid>
-                    <Grid item xs={12} sm={4} sx={{ display: 'flex', justifyContent: 'flex-end', flexDirection: 'column', alignItems: 'flex-end', minHeight: 64, pl: { sm: 2 } }}>
-                        <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary' }}>Profit / Loss</Typography>
-                        <Typography noWrap sx={{ fontWeight: 900, fontSize: { xs: '0.95rem', sm: '1.1rem' }, color: totals.profit > 0 ? 'success.main' : 'error.main' }}>₹{fmtRoundUp(totals.profit)}</Typography>
-                        <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary', mt: 0.35 }}>{totals.principal ? `(${((totals.profit / totals.principal) * 100).toFixed(2)}%)` : ''}</Typography>
-                    </Grid>
-                    <Grid item xs={12} sx={{ mt: 0.25 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', gap: 2 }}>
-                            <Box sx={{ textAlign: 'left', flex: 1 }}>
-                                <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', textAlign: 'left' }}>{month1Label}</Typography>
-                                <Typography sx={{ fontWeight: 800, fontSize: '0.95rem', color: (Number.isFinite(totals.month1) && Number.isFinite(totals.marketValue) && Number(totals.month1) > Number(totals.marketValue)) ? 'success.main' : 'text.primary', textAlign: 'left' }}>₹{fmtRoundUp(totals.month1)}</Typography>
-                            </Box>
-                            <Box sx={{ textAlign: 'center', flex: 1 }}>
-                                <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', textAlign: 'left' }}>{month2Label}</Typography>
-                                <Typography sx={{ fontWeight: 800, fontSize: '0.95rem', color: (Number.isFinite(totals.month2) && Number.isFinite(totals.marketValue) && Number(totals.month2) > Number(totals.marketValue)) ? 'success.main' : 'text.primary', textAlign: 'left' }}>₹{fmtRoundUp(totals.month2)}</Typography>
-                            </Box>
-                            <Box sx={{ textAlign: 'right', flex: 1 }}>
-                                <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', textAlign: 'left' }}>{month3Label}</Typography>
-                                <Typography sx={{ fontWeight: 800, fontSize: '0.95rem', color: (Number.isFinite(totals.month3) && Number.isFinite(totals.marketValue) && Number(totals.month3) > Number(totals.marketValue)) ? 'success.main' : 'text.primary', textAlign: 'left' }}>₹{fmtRoundUp(totals.month3)}</Typography>
+                            <Box>
+                                <Typography sx={{ color: alpha('#ffffff', 0.68), fontSize: 12 }}>Today's gain/loss</Typography>
+                                <Typography sx={{ color: positiveDay ? '#86efac' : '#fecaca', fontSize: 18, fontWeight: 850 }}>
+                                    {formatCurrency(totals.prevDelta)} {oneDayPct !== null ? `(${formatPercent(oneDayPct)})` : ''}
+                                </Typography>
                             </Box>
                         </Box>
-                    </Grid>
-                </Grid>
+                    </Box>
+
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: '1fr' }, gap: 1.25 }}>
+                        <MetricTile label="Overall return" help="How much your portfolio has gained or lost compared with the money you invested." value={returnPct !== null ? formatPercent(returnPct) : '-'} helper={formatCurrency(totals.profit)} tone={positiveReturn ? 'positive' : 'negative'} icon={positiveReturn ? <TrendingUpIcon fontSize="small" /> : <TrendingDownIcon fontSize="small" />} />
+                        <MetricTile label="Today's change" help="How much the portfolio changed compared with the previous available NAV date." value={oneDayPct !== null ? formatPercent(oneDayPct) : '-'} helper={formatCurrency(totals.prevDelta)} tone={positiveDay ? 'positive' : 'negative'} icon={trendIcon} />
+                    </Box>
+                </Box>
+
+                <Box sx={{ mt: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                        <Typography sx={{ color: 'text.primary', fontSize: 14, fontWeight: 900 }}>Estimated value trend</Typography>
+                        <Tooltip title={estimatedTrendHelp}>
+                            <InfoOutlinedIcon sx={{ color: 'text.secondary', fontSize: 16 }} />
+                        </Tooltip>
+                    </Box>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 1.25 }}>
+                        <MetricTile label={month1Label || '1 month'} value={formatCurrency(totals.month1)} helper="Today’s units on this date" help={estimatedTrendHelp} icon={<CalendarTodayIcon fontSize="small" />} />
+                        <MetricTile label={month2Label || '2 months'} value={formatCurrency(totals.month2)} helper="Today’s units on this date" help={estimatedTrendHelp} icon={<SavingsIcon fontSize="small" />} />
+                        <MetricTile label={month3Label || '3 months'} value={formatCurrency(totals.month3)} helper="Today’s units on this date" help={estimatedTrendHelp} icon={<AccountBalanceWalletIcon fontSize="small" />} />
+                    </Box>
+                </Box>
             </CardContent>
         </Card>
     );

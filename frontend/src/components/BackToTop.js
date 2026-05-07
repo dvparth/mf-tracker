@@ -1,5 +1,4 @@
 import React from 'react';
-import '../components/styles/header.css';
 
 export default function BackToTop({ onClick }) {
     return (

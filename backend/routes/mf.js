@@ -35,7 +35,7 @@ async function fetchSchemePayload(schemeCode, useHybrid) {
 async function handleSchemeRequest(req, res, useHybrid = false) {
     const schemeCodes = parseSchemeCodes(req);
     if (!schemeCodes.length) {
-        return res.status(400).json({ error: 'No scheme codes provided' });
+        return res.json([]);
     }
 
     const results = await Promise.all(

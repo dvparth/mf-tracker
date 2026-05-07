@@ -5,67 +5,114 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import Grid from '@mui/material/Grid';
 import Divider from '@mui/material/Divider';
-import { fmtUnit, fmtRoundUp, toTitleCase, monthLabelShort, accentColor, dateShort, fmtAmount } from '../utils/formatters';
+import Chip from '@mui/material/Chip';
+import Tooltip from '@mui/material/Tooltip';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { alpha } from '@mui/material/styles';
+import { fmtUnit, formatCurrency, formatFundName, monthLabelShort, accentColor, dateShort, fmtAmount, formatPercent } from '../utils/formatters';
+import MiniSparkline from './ui/MiniSparkline';
 
-export default function SchemeAccordion({ r, month1Label, month2Label, month3Label }) {
+function DetailMetric({ label, value, tone = 'text.primary' }) {
+    return (
+        <Box sx={{ minWidth: 0 }}>
+            <Typography component="div" sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 700 }}>{label}</Typography>
+            <Typography sx={{ fontSize: 15, color: tone, fontWeight: 850, mt: 0.25, overflowWrap: 'anywhere' }}>{value}</Typography>
+        </Box>
+    );
+}
+
+export default function SchemeAccordion({ r, totalValue = 0, month1Label, month2Label, month3Label }) {
     const pct = (r.hist[0] && r.hist[0].marketValue) ? ((r.prevDelta / r.hist[0].marketValue) * 100) : null;
     const profitPct = (r.principal && r.profit !== null) ? ((r.profit / r.principal) * 100) : null;
+    const allocationPct = totalValue && r.marketValue ? (r.marketValue / totalValue) * 100 : 0;
+    const profitTone = r.profit > 0 ? 'success.main' : r.profit < 0 ? 'error.main' : 'text.secondary';
+    const dayTone = r.prevDelta > 0 ? 'success.main' : r.prevDelta < 0 ? 'error.main' : 'text.secondary';
+    const sparkValues = [
+        r.months?.[2]?.marketValue,
+        r.months?.[1]?.marketValue,
+        r.months?.[0]?.marketValue,
+        r.marketValue
+    ].map((value) => Number(value));
+    const sparkTone = r.profit > 0 ? 'positive' : r.profit < 0 ? 'negative' : 'neutral';
+    const estimatedValueHelp = 'Estimated value of this fund using your current units on a past date. This may differ from actual past value if you bought or sold units.';
+
     return (
-        <Accordion id={`scheme-${r.scheme_code}`} component="article" aria-label={`scheme-${r.scheme_code}`}
-            key={r.scheme_code}
+        <Accordion
+            id={`scheme-${r.scheme_code}`}
+            component="article"
+            aria-label={`scheme-${r.scheme_code}`}
             disableGutters
             sx={(theme) => ({
-                borderRadius: 2,
-                borderLeft: '4px solid',
-                borderLeftColor: accentColor(r.prevDelta),
-                background: theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-                boxShadow: theme.palette.mode === 'dark' ? '0 6px 18px rgba(0,0,0,0.6)' : '0 6px 18px rgba(15,23,36,0.03)',
-                transition: 'transform .18s ease, box-shadow .18s ease',
-                '&:hover': { transform: 'translateY(-2px)', boxShadow: theme.palette.mode === 'dark' ? '0 12px 28px rgba(0,0,0,0.7)' : '0 10px 28px rgba(15,23,36,0.08)' },
-                '&:hover .invested-amt': { color: theme.palette.text.primary, transform: 'translateY(-1px)' }
+                borderRadius: 2.25,
+                overflow: 'hidden',
+                background: theme.palette.background.paper,
+                border: `1px solid ${theme.palette.divider}`,
+                boxShadow: '0 12px 32px rgba(15,23,42,0.06)',
+                transition: 'transform .18s ease, box-shadow .18s ease, border-color .18s ease',
+                '&:before': { display: 'none' },
+                '&:hover': {
+                    transform: 'translateY(-2px)',
+                    borderColor: alpha(accentColor(r.prevDelta), 0.38),
+                    boxShadow: '0 18px 44px rgba(15,23,42,0.10)'
+                }
             })}
         >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls={`scheme-${r.scheme_code}-content`} id={`scheme-${r.scheme_code}-header`}>
-                <Box sx={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', maxWidth: '62%' }}>
-                        <Typography component="h3" sx={{ fontSize: '0.98rem', fontWeight: 800, color: 'text.primary' }}>{toTitleCase(r.scheme_name)}</Typography>
-                        <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary' }}>{r.unit ? `${fmtUnit(r.unit)} units` : ''} • NAV: ₹{r.nav !== null ? fmtAmount(r.nav) : '-'}</Typography>
-                    </Box>
-                    <Box sx={{ textAlign: 'right', minWidth: 120 }}>
-                        <Typography sx={{ fontWeight: 800, color: 'text.primary' }}>₹{r.marketValue !== null ? fmtRoundUp(r.marketValue) : '-'}</Typography>
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 0.5 }}>
-                            <Typography sx={{ fontWeight: 700, fontSize: '0.95rem' }} style={{ color: accentColor(r.profit) }}>{r.profit !== null ? `₹${fmtRoundUp(r.profit)}` : '-'}</Typography>
-                            <Typography sx={{ fontSize: '0.72rem', ml: 0.5 }} style={{ color: accentColor(r.profit) }}>{profitPct !== null ? `${profitPct > 0 ? '+' : ''}${profitPct.toFixed(2)}%` : ''}</Typography>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls={`scheme-${r.scheme_code}-content`} id={`scheme-${r.scheme_code}-header`} sx={{ px: { xs: 1.5, sm: 2 }, py: 0.65 }}>
+                <Box sx={{ width: '100%', display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 150px auto' }, gap: { xs: 1.4, md: 2 }, alignItems: 'center' }}>
+                    <Box sx={{ minWidth: 0 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                            <Typography component="h3" sx={{ fontSize: { xs: 15, sm: 16 }, fontWeight: 900, color: 'text.primary', lineHeight: 1.25 }}>
+                                {formatFundName(r.scheme_name)}
+                            </Typography>
+                            <Chip size="small" label={`${allocationPct.toFixed(1)}%`} sx={{ height: 22, fontSize: 11, fontWeight: 850, bgcolor: 'action.hover' }} />
                         </Box>
-                        <Typography sx={{ fontSize: '0.72rem', color: accentColor(r.prevDelta), fontWeight: 700 }}>{r.prevDelta !== null ? `${r.prevDelta > 0 ? '+' : ''}₹${fmtRoundUp(r.prevDelta)} ${pct !== null ? `(${pct.toFixed(2)}%)` : ''}` : ''}</Typography>
-                        <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>{r.latestDate ? dateShort(r.latestDate) : ''}</Typography>
+                        <Box sx={{ mt: 0.9, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 54px', gap: 1, alignItems: 'center', maxWidth: 560 }}>
+                            <Box sx={{ height: 7, borderRadius: 999, backgroundColor: '#e2e8f0', overflow: 'hidden' }}>
+                                <Box sx={{ width: `${Math.min(100, Math.max(0, allocationPct))}%`, height: '100%', borderRadius: 999, background: 'linear-gradient(90deg, #2563eb, #0f9f6e)' }} />
+                            </Box>
+                            <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 750, textAlign: 'right' }}>{allocationPct.toFixed(1)}%</Typography>
+                        </Box>
+                    </Box>
+
+                    <Box sx={{ display: { xs: 'none', md: 'block' }, justifySelf: 'center' }}>
+                        <MiniSparkline values={sparkValues} tone={sparkTone} />
+                    </Box>
+
+                    <Box sx={{ textAlign: { xs: 'left', md: 'right' }, minWidth: { md: 235 } }}>
+                        <Typography sx={{ fontSize: { xs: 20, sm: 22 }, fontWeight: 950, color: 'text.primary', lineHeight: 1.05 }}>
+                            {r.marketValue !== null ? formatCurrency(r.marketValue) : '-'}
+                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' }, alignItems: 'center', gap: 1, mt: 0.65, flexWrap: 'wrap' }}>
+                            <Typography sx={{ color: profitTone, fontSize: 13, fontWeight: 850 }}>
+                                {r.profit !== null ? `${formatCurrency(r.profit)} ${profitPct !== null ? `(${formatPercent(profitPct)})` : ''}` : '-'}
+                            </Typography>
+                            <Typography sx={{ color: dayTone, fontSize: 12, fontWeight: 800 }}>
+                                {r.prevDelta !== null ? `1D ${formatCurrency(r.prevDelta)} ${pct !== null ? `(${formatPercent(pct)})` : ''}` : ''}
+                            </Typography>
+                        </Box>
                     </Box>
                 </Box>
             </AccordionSummary>
-            <AccordionDetails>
-                <Grid container spacing={1} alignItems="center">
-                    <Grid item xs={3} sx={{ flex: 1 }}>
-                        <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary' }}>Invested</Typography>
-                        <Typography noWrap sx={{ fontWeight: 700, fontSize: '0.9rem', color: 'text.primary' }}>₹{fmtRoundUp(r.principal)}</Typography>
-                    </Grid>
-                    <Grid item xs={3} sx={{ flex: 1, textAlign: 'center' }}>
-                        <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', textAlign: 'left' }}>{r.months && r.months[0] && r.months[0].date ? monthLabelShort(r.months[0].date) : month1Label}</Typography>
-                        <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: (r.months && r.months[0] && Number(r.months[0].marketValue) > Number(r.marketValue) ? 'success.main' : 'text.primary'), textAlign: 'left' }}>₹{r.months && r.months[0] && r.months[0].marketValue !== null ? fmtRoundUp(r.months[0].marketValue) : '-'}</Typography>
-                    </Grid>
-                    <Grid item xs={3} sx={{ flex: 1, textAlign: 'center' }}>
-                        <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', textAlign: 'left' }}>{r.months && r.months[1] && r.months[1].date ? monthLabelShort(r.months[1].date) : month2Label}</Typography>
-                        <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: (r.months && r.months[1] && Number(r.months[1].marketValue) > Number(r.marketValue) ? 'success.main' : 'text.primary'), textAlign: 'left' }}>₹{r.months && r.months[1] && r.months[1].marketValue !== null ? fmtRoundUp(r.months[1].marketValue) : '-'}</Typography>
-                    </Grid>
-                    <Grid item xs={3} sx={{ flex: 1, textAlign: 'right' }}>
-                        <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', textAlign: 'left' }}>{r.months && r.months[2] && r.months[2].date ? monthLabelShort(r.months[2].date) : month3Label}</Typography>
-                        <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: (r.months && r.months[2] && Number(r.months[2].marketValue) > Number(r.marketValue) ? 'success.main' : 'text.primary'), textAlign: 'left' }}>₹{r.months && r.months[2] && r.months[2].marketValue !== null ? fmtRoundUp(r.months[2].marketValue) : '-'}</Typography>
-                    </Grid>
-                    <Grid item xs={12}>
-                        <Divider sx={{ my: 1 }} />
-                    </Grid>
-                </Grid>
+            <AccordionDetails sx={{ px: { xs: 1.5, sm: 2 }, pt: 0, pb: 2 }}>
+                <Divider sx={{ mb: 1.5 }} />
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(5, minmax(0, 1fr))' }, gap: 1.5 }}>
+                    <DetailMetric label="Money invested" value={formatCurrency(r.principal)} />
+                    <DetailMetric label="Units held" value={fmtUnit(r.unit)} />
+                    <DetailMetric
+                        label={<Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4 }}>Fund NAV <Tooltip title="NAV is the per-unit price of the mutual fund on the latest available date."><InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary' }} /></Tooltip></Box>}
+                        value={`₹${r.nav !== null ? fmtAmount(r.nav) : '-'}`}
+                    />
+                    <DetailMetric
+                        label={<Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4 }}>{r.months?.[0]?.date ? monthLabelShort(r.months[0].date) : month1Label} estimate <Tooltip title={estimatedValueHelp}><InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary' }} /></Tooltip></Box>}
+                        value={r.months?.[0]?.marketValue !== null ? formatCurrency(r.months?.[0]?.marketValue) : '-'}
+                    />
+                    <DetailMetric
+                        label={<Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4 }}>{r.months?.[1]?.date ? monthLabelShort(r.months[1].date) : month2Label} estimate <Tooltip title={estimatedValueHelp}><InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary' }} /></Tooltip></Box>}
+                        value={r.months?.[1]?.marketValue !== null ? formatCurrency(r.months?.[1]?.marketValue) : '-'}
+                    />
+                </Box>
+                <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 1.5 }}>Fund ID {r.scheme_code}{r.latestDate ? ` · Updated ${dateShort(r.latestDate)}` : ''}</Typography>
             </AccordionDetails>
         </Accordion>
     );

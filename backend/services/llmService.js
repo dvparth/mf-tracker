@@ -20,19 +20,24 @@ function getGitHubModel(modelOverride = null) {
 function buildPortfolioPrompt(portfolioDetails) {
   const portfolioJson = JSON.stringify(portfolioDetails, null, 2);
   return [
-    'Analyze this Indian mutual fund portfolio JSON.',
+    'Analyze this Indian mutual fund portfolio context JSON.',
     'Return only valid JSON with this exact shape:',
     '{"summary":"Short overall portfolio summary","cards":[{"type":"performance|concentration|risk|watchpoint","title":"Short card title","severity":"positive|neutral|caution","message":"Plain-English explanation","relatedSchemes":[123456]}]}',
-    'Create 3 to 5 cards. Use only facts visible in the JSON. Do not recommend buying, selling, switching, redeeming, or adding money.',
-    `Portfolio JSON:\n${portfolioJson}`,
+    'Create 3 to 5 cards. Prefer the precomputed facts section over recalculating from raw holdings.',
+    'Use marketContext only as broad market context when included=true; never claim it explains a specific fund unless the JSON directly supports that.',
+    'Mention inferred categories only as approximate category exposure, not official fund classification.',
+    'Use beginner-friendly language. Explain why the observation matters in one short paragraph.',
+    'Do not recommend buying, selling, switching, redeeming, or adding money.',
+    `Portfolio context JSON:\n${portfolioJson}`,
   ].join('\n');
 }
 
 function buildPortfolioSystemPrompt() {
   return [
     'You are a financial analyst specializing in Indian mutual funds.',
-    'Write a concise plain-English summary for the provided portfolio JSON.',
-    'Focus on total profit/loss in INR, best and worst performing schemes, one-day movement, and concentration risk.',
+    'Write concise plain-English observations for the provided portfolio context JSON.',
+    'Focus on total profit/loss in INR, best and weakest funds, today movement, concentration, diversification, category exposure, and broad market context when provided.',
+    'Do not invent news, fund facts, benchmarks, categories, or causes that are not in the JSON.',
     'Return valid JSON only. Do not wrap it in markdown fences.',
     'Do not provide personalized buy/sell instructions.',
   ].join(' ');

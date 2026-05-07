@@ -7,6 +7,7 @@ const {
   buildPortfolioSystemPrompt,
   isGitHubModelsConfigured,
 } = require('../services/llmService');
+const { buildEnrichedPortfolioContext } = require('../services/portfolioContextService');
 
 const insightCache = new Map();
 const MAX_CACHE_ENTRIES = 50;
@@ -91,8 +92,10 @@ router.post('/', async (req, res) => {
     }
 
     const portfolioHash = getPortfolioHash(portfolioDetails);
-    if (!refresh && insightCache.has(portfolioHash)) {
-      return res.json(insightCache.get(portfolioHash));
+    const cacheDate = new Date().toISOString().slice(0, 10);
+    const cacheKey = `${portfolioHash}:${cacheDate}`;
+    if (!refresh && insightCache.has(cacheKey)) {
+      return res.json(insightCache.get(cacheKey));
     }
 
     if (!isGitHubModelsConfigured()) {
@@ -102,7 +105,8 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const prompt = buildPortfolioPrompt(portfolioDetails);
+    const enrichedContext = await buildEnrichedPortfolioContext(portfolioDetails);
+    const prompt = buildPortfolioPrompt(enrichedContext);
     const systemPrompt = buildPortfolioSystemPrompt();
     const insightResult = await callGitHubModel({ prompt, systemPrompt });
     const parsedInsight = normalizeInsightPayload(parseModelJson(insightResult.reply));
@@ -113,8 +117,15 @@ router.post('/', async (req, res) => {
       provider: insightResult.provider,
       model: insightResult.model,
       portfolioHash,
+      context: {
+        factsIncluded: true,
+        marketContextIncluded: Boolean(enrichedContext.marketContext?.included),
+        marketSources: enrichedContext.marketContext?.sources || [],
+        marketFetchedAt: enrichedContext.marketContext?.fetchedAt || null,
+        categoryInference: true,
+      },
     };
-    setCachedInsight(portfolioHash, responseBody);
+    setCachedInsight(cacheKey, responseBody);
 
     return res.json(responseBody);
   } catch (error) {

@@ -4,9 +4,27 @@ export function fmtAmount(v) {
     return Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+export function formatCurrency(v, options = {}) {
+    if (v === null || v === undefined || Number.isNaN(Number(v))) return '-';
+    const { maximumFractionDigits = 0, minimumFractionDigits = 0, compact = false } = options;
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits,
+        minimumFractionDigits,
+        notation: compact ? 'compact' : 'standard'
+    }).format(Number(v));
+}
+
+export function formatPercent(v, digits = 2) {
+    if (v === null || v === undefined || Number.isNaN(Number(v))) return '-';
+    const value = Number(v);
+    return `${value > 0 ? '+' : ''}${value.toFixed(digits)}%`;
+}
+
 export function fmtRoundUp(v) {
     if (v === null || v === undefined || Number.isNaN(v)) return '-';
-    return Math.ceil(Number(v)).toLocaleString();
+    return Math.ceil(Number(v)).toLocaleString('en-IN');
 }
 
 export function fmtUnit(v) {
@@ -23,8 +41,8 @@ export function profitColor(n) {
 
 export function accentColor(n) {
     if (n === null || n === undefined || Number.isNaN(n)) return '#cfd8dc';
-    if (n > 0) return '#00b894';
-    if (n < 0) return '#ff6b6b';
+    if (n > 0) return '#0f9f6e';
+    if (n < 0) return '#dc2626';
     return '#90a4ae';
 }
 
@@ -50,6 +68,16 @@ export function monthLabelShort(d) {
 export function toTitleCase(str) {
     if (!str) return '';
     return String(str).toLowerCase().split(/\s+/).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+}
+
+export function formatFundName(name) {
+    return toTitleCase(name || '')
+        .replace(/\bIdcw\b/g, 'IDCW')
+        .replace(/\bSip\b/g, 'SIP')
+        .replace(/\bEtf\b/g, 'ETF')
+        .replace(/\bNfo\b/g, 'NFO')
+        .replace(/\bNav\b/g, 'NAV')
+        .replace(/\bGsec\b/g, 'G-Sec');
 }
 
 // Date helpers used by MFTracker for month math

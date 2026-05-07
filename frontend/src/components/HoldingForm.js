@@ -6,11 +6,15 @@ import LoadingButton from './LoadingButton';
 import FeedbackSnackbar from './FeedbackSnackbar';
 import Autocomplete from '@mui/material/Autocomplete';
 import CircularProgress from '@mui/material/CircularProgress';
-import { toTitleCase } from '../utils/formatters';
+import InputAdornment from '@mui/material/InputAdornment';
+import { formatFundName } from '../utils/formatters';
 
-// Runtime-safe fallbacks in case imports fail to resolve
-const SafeLoadingButton = (typeof LoadingButton === 'undefined' || LoadingButton === null) ? (({ children, ...p }) => <Button {...p}>{children}</Button>) : LoadingButton;
-const SafeFeedbackSnackbar = (typeof FeedbackSnackbar === 'undefined' || FeedbackSnackbar === null) ? (({ open, message }) => open ? <div style={{ position: 'fixed', bottom: 8, left: '50%', transform: 'translateX(-50%)', background: '#333', color: '#fff', padding: '8px 12px', borderRadius: 6 }}>{message}</div> : null) : FeedbackSnackbar;
+const SafeLoadingButton = (typeof LoadingButton === 'undefined' || LoadingButton === null)
+    ? (({ children, ...p }) => <Button {...p}>{children}</Button>)
+    : LoadingButton;
+const SafeFeedbackSnackbar = (typeof FeedbackSnackbar === 'undefined' || FeedbackSnackbar === null)
+    ? (({ open, message }) => open ? <div style={{ position: 'fixed', bottom: 8, left: '50%', transform: 'translateX(-50%)', background: '#333', color: '#fff', padding: '8px 12px', borderRadius: 6 }}>{message}</div> : null)
+    : FeedbackSnackbar;
 
 export default function HoldingForm({ onSaved, editing = null, onCancel = null }) {
     const [schemes, setSchemes] = useState([]);
@@ -23,11 +27,7 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
     const [loading, setLoading] = useState(false);
     const [snack, setSnack] = useState(null);
 
-    const formatSchemeName = (name) => toTitleCase(name || '')
-        .replace(/\bIdcw\b/g, 'IDCW')
-        .replace(/\bSip\b/g, 'SIP')
-        .replace(/\bEtf\b/g, 'ETF')
-        .replace(/\bNfo\b/g, 'NFO');
+    const formatSchemeName = (name) => formatFundName(name || '');
 
     const getSchemeLabel = (scheme) => {
         if (!scheme || typeof scheme !== 'object') return '';
@@ -69,10 +69,8 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
         };
     }, [inputValue, editing]);
 
-    // When editing prop is provided, populate the form fields
     useEffect(() => {
         if (editing) {
-            // editing.principal/unit may be numbers; ensure strings for controlled inputs
             const matchingScheme = schemes.find(s => Number(s.scheme_code) === Number(editing.scheme_code));
             setSelected(matchingScheme || null);
             const matchingName = matchingScheme?.scheme_name ? `${formatSchemeName(matchingScheme.scheme_name)} (${matchingScheme.scheme_code})` : '';
@@ -84,7 +82,6 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
     }, [editing, schemes]);
 
     const save = async () => {
-        // client-side validation
         if (!editing && !(selected && selected.scheme_code)) {
             setSnack({ severity: 'error', message: 'Select a fund from the list' });
             return;
@@ -93,17 +90,23 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
             setSnack({ severity: 'error', message: 'Enter principal or units' });
             return;
         }
+
         const schemeCode = editing ? Number(editing.scheme_code) : Number(selected.scheme_code);
         if (!schemeCode) return;
         const payload = { holdings: [{ scheme_code: schemeCode, principal: Number(principal || 0), unit: Number(unit || 0) }] };
+
         setLoading(true);
         try {
             if (editing) {
-                // Update existing holding via PUT
                 const scheme = editing.scheme_code;
                 const principalNum = principal === '' ? 0 : Number.parseFloat(String(principal).replace(/[,₹\s]/g, '')) || 0;
                 const unitNum = unit === '' ? 0 : Number.parseFloat(String(unit).replace(/[,\s]/g, '')) || 0;
-                const res = await fetch((process.env.REACT_APP_BACKEND_URL || '') + `/user/holdings/${scheme}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ principal: principalNum, unit: unitNum }) });
+                const res = await fetch((process.env.REACT_APP_BACKEND_URL || '') + `/user/holdings/${scheme}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ principal: principalNum, unit: unitNum })
+                });
                 if (res.ok) {
                     const json = await res.json();
                     setSnack({ severity: 'success', message: 'Holding updated' });
@@ -114,10 +117,18 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
                     setSnack({ severity: 'error', message: `Update failed: ${txt}` });
                 }
             } else {
-                const res = await fetch((process.env.REACT_APP_BACKEND_URL || '') + '/user/holdings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+                const res = await fetch((process.env.REACT_APP_BACKEND_URL || '') + '/user/holdings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload)
+                });
                 if (res.ok) {
                     const json = await res.json();
-                    setPrincipal(''); setUnit(''); setSelected(null); setInputValue('');
+                    setPrincipal('');
+                    setUnit('');
+                    setSelected(null);
+                    setInputValue('');
                     setSnack({ severity: 'success', message: 'Holding saved' });
                     if (onSaved) onSaved(json.holdings || []);
                 } else {
@@ -133,7 +144,7 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
     };
 
     return (
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'stretch', mb: 1, flexDirection: { xs: 'column', sm: 'row' } }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(320px, 1.55fr) minmax(150px, 0.7fr) minmax(140px, 0.65fr) auto' }, gap: 1.25, alignItems: 'start' }}>
             {editing ? (
                 <TextField
                     label="Fund name"
@@ -142,7 +153,8 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
                     disabled
                     fullWidth
                     helperText="Fund cannot be changed while editing"
-                    sx={{ minWidth: 120, flex: '1 1 0' }}
+                    sx={{ minWidth: 120 }}
+                    InputProps={{ sx: { bgcolor: 'action.hover' } }}
                 />
             ) : (
                 <Autocomplete
@@ -164,11 +176,12 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
                     inputValue={inputValue}
                     onInputChange={(e, v) => setInputValue(v)}
                     onChange={(e, v) => setSelected(v)}
-                    sx={{ minWidth: 120, flex: '1 1 0', display: 'flex', alignItems: 'stretch', width: '100%' }}
+                    sx={{ minWidth: 120, width: '100%' }}
                     renderInput={(params) => (
                         <TextField
                             {...params}
                             label="Fund name"
+                            placeholder="Search by fund name"
                             size="small"
                             fullWidth
                             error={!!schemesError}
@@ -186,9 +199,20 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
                     )}
                 />
             )}
-            <TextField size="small" label="Principal" value={principal} onChange={(e) => setPrincipal(e.target.value)} fullWidth sx={{ minWidth: 120, flex: '1 1 0' }} />
-            <TextField size="small" label="Units" value={unit} onChange={(e) => setUnit(e.target.value)} fullWidth sx={{ minWidth: 120, flex: '1 1 0' }} />
-            <SafeLoadingButton variant="contained" size="small" onClick={save} loading={loading} sx={{ alignSelf: { xs: 'stretch', sm: 'center' }, height: { xs: '40px', sm: 'auto' } }}>{editing ? 'Save changes' : 'Save'}</SafeLoadingButton>
+            <TextField
+                size="small"
+                label="Principal"
+                value={principal}
+                onChange={(e) => setPrincipal(e.target.value)}
+                fullWidth
+                sx={{ minWidth: 120 }}
+                InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
+            />
+            <TextField size="small" label="Units" value={unit} onChange={(e) => setUnit(e.target.value)} fullWidth sx={{ minWidth: 120 }} placeholder="0.000" />
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: { xs: 'stretch', lg: 'flex-end' }, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <SafeLoadingButton variant="contained" size="small" onClick={save} loading={loading} fullWidth sx={{ minWidth: 124, height: 40 }}>{editing ? 'Update' : 'Add fund'}</SafeLoadingButton>
+                {editing ? <Button size="small" onClick={onCancel} fullWidth sx={{ minWidth: 90, height: 40 }}>Cancel</Button> : null}
+            </Box>
             <SafeFeedbackSnackbar open={!!snack} severity={String((snack && snack.severity) || 'info')} message={snack && snack.message} onClose={() => setSnack(null)} />
         </Box>
     );
