@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
+  <rect width="100%" height="100%" fill="#635bff"/>
+  <g fill="#fff" font-family="Montserrat, Roboto, Arial" font-weight="700">
+    <text x="60" y="220" font-size="48">MF Tracker</text>
+    <text x="60" y="300" font-size="28">Personal Mutual Fund Snapshot</text>
+  </g>
+</svg>

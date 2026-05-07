@@ -1,0 +1,14 @@
+/* Shared tokens and small utility classes for components */
+.btn-transition {
+  transition: background-color 160ms ease, color 160ms ease,
+    transform 120ms ease;
+}
+.muted-caption {
+  color: rgba(15, 23, 36, 0.6);
+  font-size: 0.8rem;
+}
+.center-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
