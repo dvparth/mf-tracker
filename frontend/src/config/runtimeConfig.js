@@ -7,8 +7,7 @@
 const ENV = {
     RAPIDAPI_KEY: 'REACT_APP_RAPIDAPI_KEY',
     RAPIDAPI_HOST: 'REACT_APP_RAPIDAPI_HOST',
-    DATA_ADAPTER: 'REACT_APP_DATA_ADAPTER',
-    AI_MODEL: 'REACT_APP_AI_MODEL'
+    DATA_ADAPTER: 'REACT_APP_DATA_ADAPTER'
 };
 
 // Look for rapidapi key in several places and return key + source.
@@ -81,16 +80,6 @@ export function getDataAdapter() {
     return '';
 }
 
-export function getAIModel() {
-    try {
-        if (typeof process !== 'undefined' && process.env && process.env[ENV.AI_MODEL]) return String(process.env[ENV.AI_MODEL]).trim();
-    } catch (e) {
-        // ignore
-    }
-    if (typeof window !== 'undefined' && window.__AI_MODEL__) return String(window.__AI_MODEL__).trim();
-    return 'Qwen/Qwen2.5-7B-Instruct';
-}
-
 // Initialize window globals from build-time env (idempotent)
 export function initRuntimeConfig() {
     try {
@@ -98,8 +87,7 @@ export function initRuntimeConfig() {
         window.__RAPIDAPI_KEY__ = window.__RAPIDAPI_KEY__ || (process && process.env && process.env[ENV.RAPIDAPI_KEY]) || window.__RAPIDAPI_KEY__ || '';
         window.__RAPIDAPI_HOST__ = window.__RAPIDAPI_HOST__ || (process && process.env && process.env[ENV.RAPIDAPI_HOST]) || window.__RAPIDAPI_HOST__ || 'latest-mutual-fund-nav.p.rapidapi.com';
         window.__DATA_ADAPTER__ = window.__DATA_ADAPTER__ || (process && process.env && process.env[ENV.DATA_ADAPTER]) || window.__DATA_ADAPTER__ || '';
-        window.__AI_MODEL__ = window.__AI_MODEL__ || (process && process.env && process.env[ENV.AI_MODEL]) || window.__AI_MODEL__ || '';
-        // initialized window runtime config (API_URL, RAPIDAPI_HOST, DATA_ADAPTER, AI_MODEL)
+        // initialized window runtime config (RAPIDAPI_HOST, DATA_ADAPTER)
     } catch (e) {
         // ignore
     }

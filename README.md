@@ -38,9 +38,7 @@ Optional backend environment:
 - `GOOGLE_CALLBACK`
 - `RAPIDAPI_KEY`
 - `RAPIDAPI_HOST`
-- `GITHUB_TOKEN`
-- `OPENAI_API_KEY`
-- `HUGGINGFACE_API_KEY`
+- `GITHUB_TOKEN` - enables AI portfolio insights through GitHub Models
 
 ## Frontend Setup
 
@@ -58,7 +56,6 @@ Required frontend environment:
 Optional frontend environment:
 
 - `REACT_APP_DATA_ADAPTER`
-- `REACT_APP_AI_MODEL`
 - `REACT_APP_RAPIDAPI_KEY`
 - `REACT_APP_RAPIDAPI_HOST`
 
@@ -85,8 +82,7 @@ npm run dev
 - `/user/holdings` - authenticated holdings CRUD
 - `/schemes` - DB-backed scheme metadata
 - `/api/mf` - mutual fund NAV lookup
-- `/api/portfolioInsight` - AI portfolio summary
-- `/api/llm` - direct LLM chat endpoint
+- `/api/portfolioInsight` - AI portfolio summary through GitHub Models
 
 ## Deployment Notes
 

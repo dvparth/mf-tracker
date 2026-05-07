@@ -14,7 +14,6 @@ import { Suspense } from 'react';
 import BackToTop from './BackToTop';
 import './styles/header.css';
 import { parseDMY, formatDMY, findNearestEntry, monthLabelShort } from '../utils/formatters';
-import { getAIModel } from '../config/runtimeConfig';
 import { fetchSchemeDataUsingAdapter } from '../adapters/mfAdapters';
 
 const SummaryCard = React.lazy(() => import('./SummaryCard'));
@@ -38,15 +37,8 @@ export default function MFTracker({ user, darkMode, setDarkMode }) {
     const fetchAISummary = async (portfolioState) => {
         try {
             const backend = process.env.REACT_APP_BACKEND_URL || '';
-            const model = getAIModel();
             const requestBody = {
-                portfolio: portfolioState,
-                provider: "github",
-                model: "gpt-4o-mini",
-                fallback: {
-                    provider: "huggingface",
-                    model: model
-                }
+                portfolio: portfolioState
             };
             const response = await fetch(`${backend}/api/portfolioInsight`, {
                 method: 'POST',
@@ -61,17 +53,7 @@ export default function MFTracker({ user, darkMode, setDarkMode }) {
             } else {
                 // Handle error responses with specific messages
                 const errorData = await response.json().catch(() => ({}));
-                let errorMessage = 'Failed to load AI summary';
-                
-                if (response.status === 402) {
-                    // Credit Depletion
-                    errorMessage = errorData.body?.message || 'Your AI credits have been depleted. Please subscribe to continue using portfolio insights.';
-                } else if (response.status >= 500) {
-                    // Service Unavailable (5xx)
-                    errorMessage = errorData.body?.message || 'The AI service is temporarily unavailable. Please try again in a few moments.';
-                } else if (errorData.body?.message) {
-                    errorMessage = errorData.body.message;
-                }
+                const errorMessage = errorData.message || errorData.error || 'Failed to load AI summary';
                 
                 setAiSummary(errorMessage);
             }

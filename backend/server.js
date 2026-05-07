@@ -8,7 +8,6 @@ const mfRoutes = require('./routes/mf');
 const userHoldingsRoutes = require('./routes/userHoldings');
 const schemesRoutes = require('./routes/schemes');
 const portfolioInsightRoutes = require('./routes/portfolioInsight');
-const llmRoutes = require('./routes/llm');
 const setupPassport = require('./auth/passport');
 const cookieParser = require('cookie-parser');
 const { requireAuth } = require('./middleware/authMiddleware');
@@ -85,16 +84,14 @@ app.use('/api/portfolioInsight', portfolioInsightRoutes);
 
 app.use('/api/mf', mfRoutes);
 
-app.use('/api/llm', llmRoutes);
-
 // Simple health and root endpoints to help verify the server is running (useful in prod)
 app.get('/health', (req, res) => {
   console.log('[health] /health requested');
   return res.json({
     status: 'ok',
-    service: 'github-llm-service',
+    service: 'mf-tracker-api',
     timestamp: new Date().toISOString(),
-    model: 'gpt-4o-mini'
+    aiProvider: 'github'
   });
 });
 app.get('/', (req, res) => {
