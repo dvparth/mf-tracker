@@ -1,9 +1,11 @@
-const GITHUB_MODELS_ENDPOINT = 'https://models.inference.ai.azure.com/chat/completions';
-const DEFAULT_GITHUB_MODEL = 'gpt-4o-mini';
+const GITHUB_MODELS_ENDPOINT = 'https://models.github.ai/inference/chat/completions';
+const GITHUB_API_VERSION = '2026-03-10';
+const DEFAULT_GITHUB_MODEL = 'openai/gpt-4.1';
 const ALLOWED_GITHUB_MODELS = new Set([
-  'gpt-4o',
-  'gpt-4o-mini',
-  'gpt-4o-mini-preview',
+  'openai/gpt-4.1',
+  'openai/gpt-4.1-mini',
+  'openai/gpt-4o',
+  'openai/gpt-4o-mini',
 ]);
 
 function isGitHubModelsConfigured() {
@@ -68,7 +70,9 @@ async function callGitHubModel({
   const response = await fetch(GITHUB_MODELS_ENDPOINT, {
     method: 'POST',
     headers: {
+      Accept: 'application/vnd.github+json',
       'Content-Type': 'application/json',
+      'X-GitHub-Api-Version': GITHUB_API_VERSION,
       Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
     },
     body: JSON.stringify({
