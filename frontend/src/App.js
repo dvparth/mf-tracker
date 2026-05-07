@@ -50,6 +50,11 @@ function App() {
 
     const theme = buildAppTheme();
     const isHoldings = location.pathname === '/holdings';
+    const renderProtected = (element) => {
+        if (user) return element;
+        if (loading) return <Login checkingSession />;
+        return <Navigate to="/login" />;
+    };
 
     return (
         <ThemeProvider theme={theme}>
@@ -145,8 +150,8 @@ function App() {
 
                 <Routes>
                     <Route path="/login" element={<Login />} />
-                    <Route path="/holdings" element={loading ? <div>Loading...</div> : (user ? <HoldingsPage /> : <Navigate to="/login" />)} />
-                    <Route path="/" element={loading ? <div>Loading...</div> : (user ? <MFTracker user={user} /> : <Navigate to="/login" />)} />
+                    <Route path="/holdings" element={renderProtected(<HoldingsPage />)} />
+                    <Route path="/" element={renderProtected(<MFTracker user={user} />)} />
                 </Routes>
             </Box>
         </ThemeProvider>

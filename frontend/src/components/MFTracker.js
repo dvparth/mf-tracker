@@ -477,7 +477,7 @@ export default function MFTracker({ user }) {
                 </Suspense>
 
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '0.82fr 1.18fr' }, gap: 2, mb: 2 }}>
-                    <SectionCard title="Portfolio Health" eyebrow="Beginner summary">
+                    <SectionCard title="Portfolio Health" eyebrow="At a glance">
                         <Box sx={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr)', gap: 2, alignItems: 'center' }}>
                             <Box sx={(theme) => ({
                                 width: 92,

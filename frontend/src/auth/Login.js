@@ -107,7 +107,7 @@ function DashboardPreview() {
     );
 }
 
-export default function Login() {
+export default function Login({ checkingSession = false }) {
     const backend = process.env.REACT_APP_BACKEND_URL || '';
 
     return (
@@ -141,7 +141,9 @@ export default function Login() {
                                 </Box>
                                 <Box>
                                     <Typography component="h2" sx={{ fontSize: 21, fontWeight: 950, lineHeight: 1.1 }}>Start your private snapshot</Typography>
-                                    <Typography sx={{ color: 'text.secondary', fontSize: 13, mt: 0.35 }}>Secure Google sign-in. No broker credentials required.</Typography>
+                                    <Typography sx={{ color: 'text.secondary', fontSize: 13, mt: 0.35 }}>
+                                        {checkingSession ? 'Checking for an existing session. You can still sign in.' : 'Secure Google sign-in. No broker credentials required.'}
+                                    </Typography>
                                 </Box>
                             </Box>
 
