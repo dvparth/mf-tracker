@@ -7,6 +7,11 @@
   VITE_BACKEND_URL = "https://mf-tracker-9isa.onrender.com"
   VITE_DATA_ADAPTER = "mfapi"
 
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]
