@@ -22,6 +22,7 @@ import { fetchWithCsrf, resetCsrfToken } from './auth/csrf';
 import { ThemeProvider, alpha } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { buildAppTheme } from './theme';
+import { BACKEND_URL } from './config/env';
 
 /**
  * Main App component.
@@ -37,7 +38,7 @@ function App() {
     const logout = async () => {
         // close menu first
         handleMenuClose();
-        await fetchWithCsrf((process.env.REACT_APP_BACKEND_URL || '') + '/auth/logout', { method: 'POST' }).catch(() => {});
+        await fetchWithCsrf(BACKEND_URL + '/auth/logout', { method: 'POST' }).catch(() => {});
         resetCsrfToken();
         setUser(null);
         navigate('/login');

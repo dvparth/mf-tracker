@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BACKEND_URL, DATA_ADAPTER } from '../config/env';
 
 // Cache for backend requests to dedupe concurrent calls
 const backendRequestCache = new Map();
@@ -14,7 +15,7 @@ export async function fetchSchemeDataUsingAdapter(schemeOrSchemes) {
     const isArray = Array.isArray(schemeOrSchemes);
     const schemes = isArray ? schemeOrSchemes : [schemeOrSchemes];
     const codes = schemes.map(s => s && s.scheme_code !== undefined && s.scheme_code !== null ? String(s.scheme_code) : '').filter(Boolean);
-    const adapter = process.env.REACT_APP_DATA_ADAPTER || 'mfapi'; // default to mfapi
+    const adapter = DATA_ADAPTER; // default to mfapi
 
     if (codes.length === 0) {
         return isArray ? [] : null;
@@ -28,7 +29,7 @@ export async function fetchSchemeDataUsingAdapter(schemeOrSchemes) {
         return isArray ? cached : cached[0].data;
     }
 
-    const backendURL = process.env.REACT_APP_BACKEND_URL;
+    const backendURL = BACKEND_URL;
     let url;
 
     if (codes.length === 1) {

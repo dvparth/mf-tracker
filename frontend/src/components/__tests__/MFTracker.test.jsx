@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { vi } from 'vitest';
 
 import MFTracker from '../MFTracker';
 // Provide a small fixture for schemes metadata used in tests
@@ -10,9 +11,9 @@ const schemes = [
 ];
 
 // Mock the adapters so the component does not perform network calls
-jest.mock('../../adapters/mfAdapters', () => ({
+vi.mock('../../adapters/mfAdapters', () => ({
     availableAdapters: ['mock'],
-    fetchSchemeDataUsingAdapter: jest.fn(() => {
+    fetchSchemeDataUsingAdapter: vi.fn(() => {
         return Promise.resolve([
             {
                 schemeCode: 147946,
@@ -44,7 +45,7 @@ describe('MFTracker', () => {
     test('renders summary and scheme list after load', async () => {
         // Mock global fetch for /schemes and /user/holdings endpoints
         const originalFetch = global.fetch;
-        global.fetch = jest.fn((input, opts) => {
+        global.fetch = vi.fn((input, opts) => {
             if (typeof input === 'string' && input.endsWith('/schemes')) {
                 return Promise.resolve({ ok: true, json: () => Promise.resolve({ schemes }) });
             }

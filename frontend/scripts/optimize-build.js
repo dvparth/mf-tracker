@@ -1,4 +1,4 @@
-/* Lightweight post-build optimizer for CRA output
+/* Lightweight post-build optimizer for Vite output
  - Removes unused CSS via PurgeCSS
  - Minifies CSS via csso
  - Minifies JS via terser
@@ -13,9 +13,8 @@ const csso = require('csso');
 const terser = require('terser');
 const glob = require('glob');
 
-const buildDir = path.join(__dirname, '..', 'build');
-const staticCss = path.join(buildDir, 'static', 'css');
-const staticJs = path.join(buildDir, 'static', 'js');
+const buildDir = path.join(__dirname, '..', 'dist');
+const assetsDir = path.join(buildDir, 'assets');
 
 async function optimize() {
     if (!fs.existsSync(buildDir)) {
@@ -25,8 +24,8 @@ async function optimize() {
 
     // Gather content files for purge analysis
     const contentFiles = glob.sync(path.join(buildDir, '**', '*.{html,js}'));
-    const cssFiles = glob.sync(path.join(staticCss, '*.css'));
-    const jsFiles = glob.sync(path.join(staticJs, '*.js'));
+    const cssFiles = glob.sync(path.join(assetsDir, '*.css'));
+    const jsFiles = glob.sync(path.join(assetsDir, '*.js'));
 
     if (cssFiles.length > 0) {
         console.log('Running PurgeCSS on CSS files...');

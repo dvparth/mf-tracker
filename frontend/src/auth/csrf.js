@@ -1,3 +1,5 @@
+import { BACKEND_URL } from '../config/env';
+
 let csrfTokenPromise = null;
 
 export function resetCsrfToken() {
@@ -7,8 +9,7 @@ export function resetCsrfToken() {
 export async function getCsrfToken({ force = false } = {}) {
     if (!force && csrfTokenPromise) return csrfTokenPromise;
 
-    const backend = process.env.REACT_APP_BACKEND_URL || '';
-    csrfTokenPromise = fetch(`${backend}/auth/csrf`, { credentials: 'include' })
+    csrfTokenPromise = fetch(`${BACKEND_URL}/auth/csrf`, { credentials: 'include' })
         .then(async (response) => {
             if (!response.ok) {
                 throw new Error('Unable to prepare secure request');

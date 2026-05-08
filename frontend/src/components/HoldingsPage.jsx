@@ -23,6 +23,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatFundName, fmtUnit } from '../utils/formatters';
 import { fetchSchemeDataUsingAdapter } from '../adapters/mfAdapters';
 import { fetchWithCsrf } from '../auth/csrf';
+import { BACKEND_URL } from '../config/env';
 
 function HoldingRow({ holding, fundName, totalPrincipal, onEdit, onAskDelete, disabled }) {
     const allocation = totalPrincipal ? (Number(holding.principal || 0) / totalPrincipal) * 100 : 0;
@@ -100,7 +101,7 @@ export default function HoldingsPage() {
 
     const load = async () => {
         try {
-            const res = await fetch((process.env.REACT_APP_BACKEND_URL || '') + '/user/holdings', { credentials: 'include' });
+            const res = await fetch(BACKEND_URL + '/user/holdings', { credentials: 'include' });
             if (res.ok) {
                 const json = await res.json();
                 setHoldings(json.holdings || []);
@@ -147,7 +148,7 @@ export default function HoldingsPage() {
     const remove = async (code) => {
         setLoading(true);
         try {
-            const res = await fetchWithCsrf((process.env.REACT_APP_BACKEND_URL || '') + '/user/holdings/' + code, { method: 'DELETE' });
+            const res = await fetchWithCsrf(BACKEND_URL + '/user/holdings/' + code, { method: 'DELETE' });
             if (res.ok) {
                 const json = await res.json();
                 setHoldings(json.holdings || []);

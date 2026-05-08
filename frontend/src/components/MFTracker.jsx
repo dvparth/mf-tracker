@@ -24,6 +24,7 @@ import SectionCard from './ui/SectionCard';
 import DonutChart from './ui/DonutChart';
 import InsightCard from './ui/InsightCard';
 import InfoTooltip from './ui/InfoTooltip';
+import { BACKEND_URL } from '../config/env';
 
 function getPortfolioHealth(rows, totals) {
     const validRows = rows.filter((row) => Number.isFinite(row.marketValue) && row.marketValue > 0);
@@ -97,7 +98,7 @@ export default function MFTracker({ user }) {
     const [aiError, setAiError] = useState(null);
 
 
-    // Adapter selection is now handled by REACT_APP_DATA_ADAPTER env var in mfAdapters.js
+    // Adapter selection is now handled by VITE_DATA_ADAPTER env var in mfAdapters.js
 
     const [manualLoading, setManualLoading] = useState(false);
 
@@ -111,7 +112,7 @@ export default function MFTracker({ user }) {
         }
 
         try {
-            const backend = process.env.REACT_APP_BACKEND_URL || '';
+            const backend = BACKEND_URL;
             const requestBody = {
                 portfolio: portfolioState,
                 ...(refresh ? { refresh: true } : {})
@@ -145,7 +146,7 @@ export default function MFTracker({ user }) {
         setError(null);
         try {
             // Load user's tracked holdings and fetch NAVs using adapters. Do not call /schemes here.
-            const backend = process.env.REACT_APP_BACKEND_URL || '';
+            const backend = BACKEND_URL;
             const holdingsRes = await fetch(`${backend}/user/holdings`, { credentials: 'include' });
             const userHoldings = (await holdingsRes.json().catch(() => ({ holdings: [] }))).holdings || [];
             // Build the tracked list from user holdings; adapter metadata (meta.scheme_name) will be used when available.

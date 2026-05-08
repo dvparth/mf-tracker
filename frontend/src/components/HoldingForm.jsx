@@ -9,6 +9,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import InputAdornment from '@mui/material/InputAdornment';
 import { formatFundName } from '../utils/formatters';
 import { fetchWithCsrf } from '../auth/csrf';
+import { BACKEND_URL } from '../config/env';
 
 const SafeLoadingButton = (typeof LoadingButton === 'undefined' || LoadingButton === null)
     ? (({ children, ...p }) => <Button {...p}>{children}</Button>)
@@ -52,7 +53,7 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
             setSchemesError('');
             try {
                 const params = new URLSearchParams({ q: query });
-                const res = await fetch((process.env.REACT_APP_BACKEND_URL || '') + `/schemes?${params.toString()}`, { credentials: 'include' });
+                const res = await fetch(BACKEND_URL + `/schemes?${params.toString()}`, { credentials: 'include' });
                 if (!res.ok) throw new Error('Unable to load fund list');
                 const json = await res.json();
                 const list = Array.isArray(json.schemes) ? json.schemes : [];
@@ -102,7 +103,7 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
                 const scheme = editing.scheme_code;
                 const principalNum = principal === '' ? 0 : Number.parseFloat(String(principal).replace(/[,₹\s]/g, '')) || 0;
                 const unitNum = unit === '' ? 0 : Number.parseFloat(String(unit).replace(/[,\s]/g, '')) || 0;
-                const res = await fetchWithCsrf((process.env.REACT_APP_BACKEND_URL || '') + `/user/holdings/${scheme}`, {
+                const res = await fetchWithCsrf(BACKEND_URL + `/user/holdings/${scheme}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ principal: principalNum, unit: unitNum })
@@ -117,7 +118,7 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
                     setSnack({ severity: 'error', message: `Update failed: ${txt}` });
                 }
             } else {
-                const res = await fetchWithCsrf((process.env.REACT_APP_BACKEND_URL || '') + '/user/holdings', {
+                const res = await fetchWithCsrf(BACKEND_URL + '/user/holdings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)

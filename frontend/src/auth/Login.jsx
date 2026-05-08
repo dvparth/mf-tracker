@@ -14,6 +14,7 @@ import AutoGraphOutlinedIcon from '@mui/icons-material/AutoGraphOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { alpha } from '@mui/material/styles';
+import { BACKEND_URL } from '../config/env';
 
 function FeaturePill({ icon, title, text }) {
     return (
@@ -108,7 +109,7 @@ function DashboardPreview() {
 }
 
 export default function Login({ checkingSession = false }) {
-    const backend = process.env.REACT_APP_BACKEND_URL || '';
+    const backend = BACKEND_URL;
 
     return (
         <Box component="main" sx={{ maxWidth: 1180, mx: 'auto', px: { xs: 2, sm: 3 }, py: { xs: 2.5, md: 4.5 } }}>

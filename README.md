@@ -55,12 +55,11 @@ npm start
 
 Required frontend environment:
 
-- `REACT_APP_BACKEND_URL`
-- `GENERATE_SOURCEMAP=false` for production builds
+- `VITE_BACKEND_URL`
 
 Optional frontend environment:
 
-- `REACT_APP_DATA_ADAPTER`
+- `VITE_DATA_ADAPTER`
 
 ## Scripts
 
@@ -99,5 +98,5 @@ Set each service's environment variables in the hosting provider. Do not commit 
 Production security defaults:
 
 - Render backend: set `NODE_ENV=production` and `FRONTEND_URL=https://mf-snapshot.netlify.app`.
-- Netlify frontend: keep `GENERATE_SOURCEMAP=false`; `frontend/netlify.toml` defines browser security headers.
+- Netlify frontend: `frontend/netlify.toml` pins Node 22, disables source maps through Vite config, and defines browser security headers.
 - Keep provider credentials (`GITHUB_TOKEN`, `RAPIDAPI_KEY`, Google secret, Mongo URI) backend-only.
