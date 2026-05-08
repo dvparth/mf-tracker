@@ -87,7 +87,7 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
             return;
         }
         if (!principal && !unit) {
-            setSnack({ severity: 'error', message: 'Enter principal or units' });
+            setSnack({ severity: 'error', message: 'Enter invested amount or units' });
             return;
         }
 
@@ -109,7 +109,7 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
                 });
                 if (res.ok) {
                     const json = await res.json();
-                    setSnack({ severity: 'success', message: 'Holding updated' });
+                    setSnack({ severity: 'success', message: 'Fund updated' });
                     if (onSaved) onSaved(json.holdings || []);
                     if (onCancel) onCancel();
                 } else {
@@ -129,7 +129,7 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
                     setUnit('');
                     setSelected(null);
                     setInputValue('');
-                    setSnack({ severity: 'success', message: 'Holding saved' });
+                    setSnack({ severity: 'success', message: 'Fund added' });
                     if (onSaved) onSaved(json.holdings || []);
                 } else {
                     const txt = await res.text().catch(() => 'Failed to save');
@@ -152,7 +152,7 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
                     value={inputValue}
                     disabled
                     fullWidth
-                    helperText="Fund cannot be changed while editing"
+                    helperText="To change the fund, remove this one and add the correct fund"
                     sx={{ minWidth: 120 }}
                     InputProps={{ sx: { bgcolor: 'action.hover' } }}
                 />
@@ -185,7 +185,7 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
                             size="small"
                             fullWidth
                             error={!!schemesError}
-                            helperText={schemesError || 'Type to search and select a matching fund'}
+                            helperText={schemesError || 'Type at least 2 characters, then choose a fund from the list'}
                             InputProps={{
                                 ...params.InputProps,
                                 endAdornment: (
@@ -201,14 +201,14 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
             )}
             <TextField
                 size="small"
-                label="Principal"
+                label="Amount invested"
                 value={principal}
                 onChange={(e) => setPrincipal(e.target.value)}
                 fullWidth
                 sx={{ minWidth: 120 }}
                 InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
             />
-            <TextField size="small" label="Units" value={unit} onChange={(e) => setUnit(e.target.value)} fullWidth sx={{ minWidth: 120 }} placeholder="0.000" />
+            <TextField size="small" label="Units held" value={unit} onChange={(e) => setUnit(e.target.value)} fullWidth sx={{ minWidth: 120 }} placeholder="0.000" />
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: { xs: 'stretch', lg: 'flex-end' }, flexDirection: { xs: 'column', sm: 'row' } }}>
                 <SafeLoadingButton variant="contained" size="small" onClick={save} loading={loading} fullWidth sx={{ minWidth: 124, height: 40 }}>{editing ? 'Update' : 'Add fund'}</SafeLoadingButton>
                 {editing ? <Button size="small" onClick={onCancel} fullWidth sx={{ minWidth: 90, height: 40 }}>Cancel</Button> : null}

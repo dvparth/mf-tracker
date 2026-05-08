@@ -23,6 +23,7 @@ import { fetchSchemeDataUsingAdapter } from '../adapters/mfAdapters';
 import SectionCard from './ui/SectionCard';
 import DonutChart from './ui/DonutChart';
 import InsightCard from './ui/InsightCard';
+import InfoTooltip from './ui/InfoTooltip';
 
 function getPortfolioHealth(rows, totals) {
     const validRows = rows.filter((row) => Number.isFinite(row.marketValue) && row.marketValue > 0);
@@ -57,22 +58,22 @@ function buildTakeaways(rows, totals, health) {
     if (Number.isFinite(totals.prevDelta)) {
         takeaways.push({
             tone: totals.prevDelta >= 0 ? 'positive' : 'caution',
-            title: totals.prevDelta >= 0 ? 'Portfolio is up today' : 'Portfolio is down today',
+            title: totals.prevDelta >= 0 ? 'Portfolio moved up recently' : 'Portfolio moved down recently',
             text: `${formatCurrency(Math.abs(totals.prevDelta))} ${totals.prevDelta >= 0 ? 'gain' : 'drop'} versus the previous available NAV.`
         });
     }
     if (health.largest) {
         takeaways.push({
             tone: health.largestPct > 40 ? 'caution' : 'neutral',
-            title: health.largestPct > 40 ? 'One fund has high weight' : 'Largest fund weight looks manageable',
+            title: health.largestPct > 40 ? 'One fund dominates your portfolio' : 'Largest fund weight is manageable',
             text: `${formatFundName(health.largest.scheme_name)} is ${health.largestPct.toFixed(1)}% of your portfolio.`
         });
     }
     if (best && worst && best.scheme_code !== worst.scheme_code) {
         takeaways.push({
             tone: 'neutral',
-            title: 'Best and weakest funds are visible',
-            text: `${formatFundName(best.scheme_name)} leads by gain/loss; ${formatFundName(worst.scheme_name)} needs review context.`
+            title: 'Top and bottom performers are visible',
+            text: `${formatFundName(best.scheme_name)} leads by gain/loss; ${formatFundName(worst.scheme_name)} is currently the weakest by gain/loss.`
         });
     }
     return takeaways.slice(0, 3);
@@ -345,19 +346,19 @@ export default function MFTracker({ user }) {
     if (!rows.length) {
         return (
             <Box component="main" sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, sm: 3 }, py: { xs: 4, sm: 6 } }}>
-                <SectionCard title="Start your mutual fund snapshot" eyebrow="No holdings added yet">
+                <SectionCard title="Build your portfolio dashboard" eyebrow="No funds added yet">
                     <Box sx={{ textAlign: 'center', py: { xs: 2, sm: 3 } }}>
                         <Box sx={{ width: 58, height: 58, borderRadius: 3, bgcolor: 'primary.main', color: 'primary.contrastText', display: 'grid', placeItems: 'center', mx: 'auto', mb: 2 }}>
                             <AddCircleOutlineIcon />
                         </Box>
                         <Typography sx={{ fontSize: { xs: 22, sm: 28 }, fontWeight: 950, lineHeight: 1.12 }}>
-                            Add your first fund to unlock portfolio insights.
+                            Add your first fund to see your portfolio clearly.
                         </Typography>
                         <Typography sx={{ color: 'text.secondary', mt: 1, maxWidth: 560, mx: 'auto' }}>
-                            Search by mutual fund name, enter your principal or units, and MF Snapshot will build your private dashboard.
+                            Search by mutual fund name, add your invested amount or units, and MF Snapshot will prepare your private dashboard.
                         </Typography>
                         <Button variant="contained" size="large" sx={{ mt: 2.5 }} onClick={() => window.location.assign('/holdings')} startIcon={<AddCircleOutlineIcon />}>
-                            Add holdings
+                            Add funds
                         </Button>
                     </Box>
                 </SectionCard>
@@ -455,12 +456,12 @@ export default function MFTracker({ user }) {
             })}>
                 <Box component="header" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 2.5, flexDirection: { xs: 'column', sm: 'row' } }}>
                     <Box>
-                        <Chip label="Live mutual fund snapshot" size="small" sx={{ fontWeight: 850, mb: 1, bgcolor: 'primary.main', color: 'primary.contrastText' }} />
+                        <Chip label="Updated mutual fund dashboard" size="small" sx={{ fontWeight: 850, mb: 1, bgcolor: 'primary.main', color: 'primary.contrastText' }} />
                         <Typography component="h1" sx={{ color: 'text.primary', fontWeight: 950, fontSize: { xs: 28, sm: 36 }, lineHeight: 1.08, letterSpacing: 0 }}>
-                            {user?.name ? `${user.name}'s portfolio` : 'Portfolio snapshot'}
+                            {user?.name ? `${user.name}'s portfolio` : 'Portfolio dashboard'}
                         </Typography>
                         <Typography component="p" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: { xs: 14, sm: 16 }, mt: 0.75 }}>
-                            Start with the important signals. Expand sections when you want the details.
+                            Review key signals first. Open sections when you want NAV, units, and fund-level details.
                         </Typography>
                     </Box>
                     <Box role="group" aria-label="dashboard controls" sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
@@ -498,9 +499,7 @@ export default function MFTracker({ user }) {
                                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.75, flexWrap: 'wrap' }}>
                                     <HealthAndSafetyOutlinedIcon color={health.tone} fontSize="small" />
                                     <Typography sx={{ fontSize: 18, fontWeight: 900 }}>{health.status}</Typography>
-                                    <Tooltip title="A simple guide based on diversification, concentration, and current return. It is not financial advice.">
-                                        <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                    </Tooltip>
+                                    <InfoTooltip title="A simple guide based on diversification, concentration, and current return. It is not financial advice." ariaLabel="Portfolio health explanation" size={15} />
                                 </Stack>
                                 <Typography sx={{ color: 'text.secondary', fontSize: 13.5, lineHeight: 1.55 }}>
                                     Diversification is <b>{health.diversification.toLowerCase()}</b>, concentration is <b>{health.concentration.toLowerCase()}</b>, and the return trend is <b>{health.trend.toLowerCase()}</b>.
@@ -513,7 +512,7 @@ export default function MFTracker({ user }) {
                         </Box>
                     </SectionCard>
 
-                    <SectionCard title="What You Should Know" eyebrow="Top insights" action={<TipsAndUpdatesOutlinedIcon color="primary" />}>
+                    <SectionCard title="Key Takeaways" eyebrow="What changed" action={<TipsAndUpdatesOutlinedIcon color="primary" />}>
                         <Box sx={{ display: 'grid', gap: 1 }}>
                             {takeaways.map((item) => {
                                 const color = item.tone === 'positive' ? 'success.main' : item.tone === 'caution' ? 'warning.main' : 'primary.main';
@@ -542,7 +541,7 @@ export default function MFTracker({ user }) {
                 <Box sx={{ mb: 1.25 }}>
                     <SectionCard
                         title={<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}><AutoAwesomeIcon fontSize="small" /> AI Insights</Box>}
-                        eyebrow="Plain-English observations"
+                        eyebrow="Plain-English review"
                         action={(
                             <LoadingButton
                                 aria-label="Refresh AI insights"
@@ -556,10 +555,10 @@ export default function MFTracker({ user }) {
                             </LoadingButton>
                         )}
                     >
-                            <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: -1, mb: 1.5 }}>AI-generated observations based only on your shown portfolio data. Not financial advice.</Typography>
+                            <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: -1, mb: 1.5 }}>AI-assisted observations based only on your portfolio data and available market context. Not financial advice.</Typography>
                             {aiInsight?.context ? (
                                 <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 1.5 }}>
-                                    {aiInsight.context.factsIncluded ? <Chip size="small" label="Portfolio facts checked" sx={{ fontWeight: 800 }} /> : null}
+                                    {aiInsight.context.factsIncluded ? <Chip size="small" label="Portfolio data checked" sx={{ fontWeight: 800 }} /> : null}
                                     {aiInsight.context.marketContextIncluded ? <Chip size="small" color="primary" label="Market context included" sx={{ fontWeight: 800 }} /> : null}
                                     {aiInsight.context.categoryInference ? (
                                         <Tooltip title="Fund categories are inferred from fund names where exact category metadata is unavailable.">
@@ -572,7 +571,7 @@ export default function MFTracker({ user }) {
                             {aiLoading && !aiInsight ? (
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.75 }}>
                                     <CircularProgress size={16} />
-                                    <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>Loading AI insights...</Typography>
+                                    <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>Preparing AI insights...</Typography>
                                 </Box>
                             ) : null}
 
@@ -594,7 +593,7 @@ export default function MFTracker({ user }) {
                                     })}
                                 </Box>
                             ) : (!aiLoading && !aiError ? (
-                                <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>No AI insights available.</Typography>
+                                <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>AI insights are not available right now.</Typography>
                             ) : null)}
                     </SectionCard>
                 </Box>
@@ -603,8 +602,8 @@ export default function MFTracker({ user }) {
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 2, mt: 2.5, mb: 1.25 }}>
                     <Box>
-                        <Typography component="h2" sx={{ fontSize: { xs: 18, sm: 20 }, fontWeight: 950 }}>Funds You Hold</Typography>
-                        <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.2 }}>Tap a fund to see advanced details like NAV, units, and fund ID.</Typography>
+                        <Typography component="h2" sx={{ fontSize: { xs: 18, sm: 20 }, fontWeight: 950 }}>Your Funds</Typography>
+                        <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.2 }}>Tap a fund to see NAV, units, fund ID, and estimated past values.</Typography>
                     </Box>
                     <Chip label={`${sortedRows.length} funds`} size="small" sx={{ fontWeight: 850 }} />
                 </Box>

@@ -107,7 +107,7 @@ function App() {
                                         color={isHoldings ? 'primary' : 'inherit'}
                                         onClick={() => navigate('/holdings')}
                                     >
-                                        Holdings
+                                        Funds
                                     </Button>
                                 </Box>
                             ) : null}
@@ -116,11 +116,11 @@ function App() {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             {!loading && user ? (
                                 <>
-                                    <Tooltip title={isHoldings ? 'Open snapshot' : 'Manage holdings'}>
+                                    <Tooltip title={isHoldings ? 'Open dashboard' : 'Manage funds'}>
                                         <IconButton
                                             size="small"
                                             onClick={() => navigate(isHoldings ? '/' : '/holdings')}
-                                            aria-label={isHoldings ? 'open snapshot' : 'manage holdings'}
+                                            aria-label={isHoldings ? 'open dashboard' : 'manage funds'}
                                             sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
                                         >
                                             {isHoldings ? <HomeIcon /> : <ListAltIcon />}

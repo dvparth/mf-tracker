@@ -65,7 +65,7 @@ function DashboardPreview() {
                 bgcolor: '#f8fafc'
             })}>
                 <Box>
-                    <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 800 }}>Sample dashboard preview</Typography>
+                    <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 800 }}>Private dashboard preview</Typography>
                     <Typography sx={{ fontSize: 18, fontWeight: 950 }}>₹••.••L</Typography>
                 </Box>
                 <Chip size="small" color="success" label="Demo data" sx={{ fontWeight: 850 }} />
@@ -77,7 +77,7 @@ function DashboardPreview() {
                         <Typography sx={{ fontSize: 20, fontWeight: 950 }}>••</Typography>
                     </Box>
                     <Box sx={{ p: 1.35, borderRadius: 2, bgcolor: 'action.hover' }}>
-                        <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 800 }}>Today</Typography>
+                        <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 800 }}>Latest</Typography>
                         <Typography sx={{ fontSize: 20, fontWeight: 950, color: 'success.main' }}>+•.••%</Typography>
                     </Box>
                 </Box>
@@ -100,7 +100,7 @@ function DashboardPreview() {
                 </Box>
                 <Box sx={(theme) => ({ mt: 1.5, p: 1.25, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.08), border: `1px solid ${alpha(theme.palette.primary.main, 0.16)}` })}>
                     <Typography sx={{ fontSize: 12, fontWeight: 900, color: 'primary.main' }}>AI insight</Typography>
-                    <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 0.35 }}>Your signed-in dashboard will show private portfolio observations here.</Typography>
+                    <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 0.35 }}>Your signed-in dashboard will explain portfolio patterns here.</Typography>
                 </Box>
             </CardContent>
         </Card>
@@ -114,19 +114,19 @@ export default function Login({ checkingSession = false }) {
         <Box component="main" sx={{ maxWidth: 1180, mx: 'auto', px: { xs: 2, sm: 3 }, py: { xs: 2.5, md: 4.5 } }}>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.05fr) minmax(360px, 0.95fr)' }, gap: { xs: 3, lg: 5 }, alignItems: 'center' }}>
                 <Box>
-                    <Chip label="Private mutual fund intelligence" size="small" color="primary" sx={{ fontWeight: 850, mb: 1.5 }} />
+                    <Chip label="Private mutual fund dashboard" size="small" color="primary" sx={{ fontWeight: 850, mb: 1.5 }} />
                     <Typography component="h1" sx={{ fontSize: { xs: 34, sm: 46, lg: 58 }, fontWeight: 950, lineHeight: 1.02, letterSpacing: 0, maxWidth: 720 }}>
                         Understand your mutual fund portfolio instantly.
                     </Typography>
                     <Typography sx={{ color: 'text.secondary', fontSize: { xs: 15.5, sm: 18 }, mt: 2, maxWidth: 650, lineHeight: 1.6 }}>
-                        See your current value, gains, risks, diversification, and AI-powered observations in one calm dashboard built for clarity.
+                        See current value, returns, diversification, and AI-assisted observations in one calm dashboard built for clarity.
                     </Typography>
 
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 1.2, mt: 2.6, maxWidth: 760 }}>
-                        <FeaturePill icon={<AccountBalanceWalletOutlinedIcon fontSize="small" />} title="Portfolio clarity" text="Know invested amount, current value, gains, and daily movement without spreadsheets." />
-                        <FeaturePill icon={<InsightsOutlinedIcon fontSize="small" />} title="AI-powered insights" text="Spot concentration, performance drivers, and watchpoints in plain English." />
+                        <FeaturePill icon={<AccountBalanceWalletOutlinedIcon fontSize="small" />} title="Portfolio clarity" text="Track amount invested, current value, returns, and latest movement without spreadsheets." />
+                        <FeaturePill icon={<InsightsOutlinedIcon fontSize="small" />} title="AI-assisted insights" text="Spot concentration, performance drivers, and watchpoints in plain English." />
                         <FeaturePill icon={<AutoGraphOutlinedIcon fontSize="small" />} title="Visual allocation" text="Understand where your money sits across funds with clean charts and trends." />
-                        <FeaturePill icon={<ShieldOutlinedIcon fontSize="small" />} title="Privacy-first tracking" text="No broker login, no transactions, no trading. Just your private snapshot." />
+                        <FeaturePill icon={<ShieldOutlinedIcon fontSize="small" />} title="Privacy-first tracking" text="No broker login, no transactions, no trading. Just your private dashboard." />
                     </Box>
                 </Box>
 
@@ -140,7 +140,7 @@ export default function Login({ checkingSession = false }) {
                                     MF
                                 </Box>
                                 <Box>
-                                    <Typography component="h2" sx={{ fontSize: 21, fontWeight: 950, lineHeight: 1.1 }}>Start your private snapshot</Typography>
+                                    <Typography component="h2" sx={{ fontSize: 21, fontWeight: 950, lineHeight: 1.1 }}>Open your private dashboard</Typography>
                                     <Typography sx={{ color: 'text.secondary', fontSize: 13, mt: 0.35 }}>
                                         {checkingSession ? 'Checking for an existing session. You can still sign in.' : 'Secure Google sign-in. No broker credentials required.'}
                                     </Typography>

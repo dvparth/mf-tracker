@@ -59,23 +59,23 @@ function HoldingRow({ holding, fundName, totalPrincipal, onEdit, onAskDelete, di
                     </Box>
 
                     <Box>
-                        <Typography sx={{ color: 'text.secondary', fontSize: 11.5, fontWeight: 750 }}>Principal</Typography>
+                        <Typography sx={{ color: 'text.secondary', fontSize: 11.5, fontWeight: 750 }}>Amount invested</Typography>
                         <Typography sx={{ color: 'text.primary', fontSize: 15, fontWeight: 850, mt: 0.15 }}>{formatCurrency(holding.principal)}</Typography>
                     </Box>
 
                     <Box>
-                        <Typography sx={{ color: 'text.secondary', fontSize: 11.5, fontWeight: 750 }}>Units</Typography>
+                        <Typography sx={{ color: 'text.secondary', fontSize: 11.5, fontWeight: 750 }}>Units held</Typography>
                         <Typography sx={{ color: 'text.primary', fontSize: 15, fontWeight: 850, mt: 0.15 }}>{fmtUnit(holding.unit)}</Typography>
                     </Box>
 
                     <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' }, gap: 0.35 }}>
-                        <Tooltip title="Edit holding">
+                        <Tooltip title="Edit fund">
                             <IconButton size="small" aria-label={`edit ${fundName}`} onClick={() => onEdit(holding)} sx={{ width: 38, height: 38 }}>
                                 <EditIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
-                        <Tooltip title="Delete holding">
-                            <IconButton size="small" aria-label={`delete ${fundName}`} onClick={() => onAskDelete(holding)} disabled={disabled} color="error" sx={{ width: 38, height: 38 }}>
+                        <Tooltip title="Remove fund">
+                            <IconButton size="small" aria-label={`remove ${fundName}`} onClick={() => onAskDelete(holding)} disabled={disabled} color="error" sx={{ width: 38, height: 38 }}>
                                 <DeleteOutlineIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
@@ -151,9 +151,9 @@ export default function HoldingsPage() {
                 const json = await res.json();
                 setHoldings(json.holdings || []);
                 setPendingDelete(null);
-                setSnack({ severity: 'success', message: 'Holding removed' });
+                setSnack({ severity: 'success', message: 'Fund removed' });
             } else {
-                setSnack({ severity: 'error', message: 'Failed to remove holding' });
+                setSnack({ severity: 'error', message: 'Failed to remove fund' });
             }
         } catch (e) {
             setSnack({ severity: 'error', message: `Failed to remove: ${e.message}` });
@@ -179,10 +179,10 @@ export default function HoldingsPage() {
         <Box component="main" sx={{ maxWidth: 1180, mx: 'auto', px: { xs: 2, sm: 3 }, py: { xs: 2.5, sm: 3 } }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 2.25, flexDirection: { xs: 'column', sm: 'row' } }}>
                 <Box>
-                    <Button size="small" startIcon={<ArrowBackIcon />} onClick={() => navigate('/')} sx={{ mb: 1 }}>Snapshot</Button>
-                    <Typography component="h1" sx={{ fontSize: { xs: 27, sm: 34 }, fontWeight: 900, lineHeight: 1.08 }}>Manage holdings</Typography>
+                    <Button size="small" startIcon={<ArrowBackIcon />} onClick={() => navigate('/')} sx={{ mb: 1 }}>Dashboard</Button>
+                    <Typography component="h1" sx={{ fontSize: { xs: 27, sm: 34 }, fontWeight: 900, lineHeight: 1.08 }}>Manage funds</Typography>
                     <Typography sx={{ color: 'text.secondary', mt: 0.65, fontWeight: 500, maxWidth: 680 }}>
-                        Add, edit, and maintain the fund inputs that power your snapshot.
+                        Add or update the funds used to build your portfolio dashboard.
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, auto)', gap: 1 }}>
@@ -192,8 +192,8 @@ export default function HoldingsPage() {
             </Box>
 
             <SectionCard
-                title={editing ? 'Edit holding' : 'Add holding'}
-                eyebrow={editing ? 'Update tracked values' : 'New fund input'}
+                title={editing ? 'Edit fund' : 'Add fund'}
+                eyebrow={editing ? 'Update amount or units' : 'Add a fund to your dashboard'}
                 action={<AddCircleOutlineIcon color="primary" />}
                 sx={{ mb: 2 }}
             >
@@ -201,14 +201,14 @@ export default function HoldingsPage() {
             </SectionCard>
 
             <SectionCard
-                title="Tracked funds"
-                eyebrow="Portfolio inputs"
+                title="Funds in your dashboard"
+                eyebrow="Your portfolio list"
                 action={<PlaylistAddCheckIcon color="primary" />}
             >
                 {holdings.length === 0 ? (
                     <Box sx={{ p: { xs: 2, sm: 3 }, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: 2 }}>
-                        <Typography sx={{ fontWeight: 850, fontSize: 18 }}>No holdings yet</Typography>
-                        <Typography sx={{ color: 'text.secondary', mt: 0.75 }}>Search for a mutual fund above and add principal or units to start tracking.</Typography>
+                        <Typography sx={{ fontWeight: 850, fontSize: 18 }}>No funds added yet</Typography>
+                        <Typography sx={{ color: 'text.secondary', mt: 0.75 }}>Search for a mutual fund above, then add invested amount or units to start tracking.</Typography>
                     </Box>
                 ) : (
                     <Box sx={{ display: 'grid', gap: 0.9 }}>
@@ -231,10 +231,10 @@ export default function HoldingsPage() {
             </SectionCard>
 
             <Dialog open={!!pendingDelete} onClose={() => !loading && setPendingDelete(null)} fullWidth maxWidth="xs">
-                <DialogTitle sx={{ fontWeight: 900 }}>Remove holding?</DialogTitle>
+                <DialogTitle sx={{ fontWeight: 900 }}>Remove this fund?</DialogTitle>
                 <DialogContent>
                     <Typography sx={{ color: 'text.secondary', lineHeight: 1.55 }}>
-                        This will remove <Box component="span" sx={{ color: 'text.primary', fontWeight: 800 }}>{pendingDeleteName}</Box> from your tracked holdings. Your mutual fund data provider and account remain unchanged.
+                        This will remove <Box component="span" sx={{ color: 'text.primary', fontWeight: 800 }}>{pendingDeleteName}</Box> from your dashboard. Your mutual fund account and data provider remain unchanged.
                     </Typography>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 2.5 }}>

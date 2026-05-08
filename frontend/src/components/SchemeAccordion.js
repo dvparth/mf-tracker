@@ -7,11 +7,10 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import Chip from '@mui/material/Chip';
-import Tooltip from '@mui/material/Tooltip';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { alpha } from '@mui/material/styles';
 import { fmtUnit, formatCurrency, formatFundName, monthLabelShort, accentColor, dateShort, fmtAmount, formatPercent } from '../utils/formatters';
 import MiniSparkline from './ui/MiniSparkline';
+import InfoTooltip from './ui/InfoTooltip';
 
 function DetailMetric({ label, value, tone = 'text.primary' }) {
     return (
@@ -100,15 +99,15 @@ export default function SchemeAccordion({ r, totalValue = 0, month1Label, month2
                     <DetailMetric label="Money invested" value={formatCurrency(r.principal)} />
                     <DetailMetric label="Units held" value={fmtUnit(r.unit)} />
                     <DetailMetric
-                        label={<Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4 }}>Fund NAV <Tooltip title="NAV is the per-unit price of the mutual fund on the latest available date."><InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary' }} /></Tooltip></Box>}
+                        label={<Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4 }}>Fund NAV <InfoTooltip title="NAV is the per-unit price of the mutual fund on the latest available date." ariaLabel="Fund NAV explanation" size={13} /></Box>}
                         value={`₹${r.nav !== null ? fmtAmount(r.nav) : '-'}`}
                     />
                     <DetailMetric
-                        label={<Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4 }}>{r.months?.[0]?.date ? monthLabelShort(r.months[0].date) : month1Label} estimate <Tooltip title={estimatedValueHelp}><InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary' }} /></Tooltip></Box>}
+                        label={<Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4 }}>{r.months?.[0]?.date ? monthLabelShort(r.months[0].date) : month1Label} estimate <InfoTooltip title={estimatedValueHelp} ariaLabel="Estimated value explanation" size={13} /></Box>}
                         value={r.months?.[0]?.marketValue !== null ? formatCurrency(r.months?.[0]?.marketValue) : '-'}
                     />
                     <DetailMetric
-                        label={<Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4 }}>{r.months?.[1]?.date ? monthLabelShort(r.months[1].date) : month2Label} estimate <Tooltip title={estimatedValueHelp}><InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary' }} /></Tooltip></Box>}
+                        label={<Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4 }}>{r.months?.[1]?.date ? monthLabelShort(r.months[1].date) : month2Label} estimate <InfoTooltip title={estimatedValueHelp} ariaLabel="Estimated value explanation" size={13} /></Box>}
                         value={r.months?.[1]?.marketValue !== null ? formatCurrency(r.months?.[1]?.marketValue) : '-'}
                     />
                 </Box>

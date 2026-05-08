@@ -8,19 +8,16 @@ import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import SavingsIcon from '@mui/icons-material/Savings';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
 import { dateShort, formatCurrency, formatPercent } from '../utils/formatters';
+import InfoTooltip from './ui/InfoTooltip';
 
 function HelpLabel({ label, help }) {
     return (
         <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.45 }}>
             <Typography sx={{ color: 'text.secondary', fontSize: 12, fontWeight: 750 }}>{label}</Typography>
             {help ? (
-                <Tooltip title={help}>
-                    <InfoOutlinedIcon sx={{ color: 'text.secondary', fontSize: 15 }} />
-                </Tooltip>
+                <InfoTooltip title={help} ariaLabel={`${label} explanation`} size={14} />
             ) : null}
         </Box>
     );
@@ -53,7 +50,7 @@ export default function SummaryCard({ id, totals, latestDate, month1Label, month
     const positiveReturn = Number(totals.profit) >= 0;
     const positiveDay = Number(totals.prevDelta) >= 0;
     const trendIcon = positiveDay ? <TrendingUpIcon fontSize="small" /> : <TrendingDownIcon fontSize="small" />;
-    const estimatedTrendHelp = 'Estimated value of your current units on past dates using the nearest available NAV. This is not actual historical portfolio value if you bought or sold units during the period.';
+    const estimatedTrendHelp = 'Your current units valued with older NAVs. This is an estimate, not your exact past portfolio value if you bought or sold units during the period.';
 
     return (
         <Card id={id} component="section" aria-label="portfolio summary" sx={{ mb: 2.5, overflow: 'hidden', borderRadius: 3 }}>
@@ -90,7 +87,7 @@ export default function SummaryCard({ id, totals, latestDate, month1Label, month
                                 </Typography>
                             </Box>
                             <Box>
-                                <Typography sx={{ color: alpha('#ffffff', 0.68), fontSize: 12 }}>Today's gain/loss</Typography>
+                                <Typography sx={{ color: alpha('#ffffff', 0.68), fontSize: 12 }}>Latest gain/loss</Typography>
                                 <Typography sx={{ color: positiveDay ? '#86efac' : '#fecaca', fontSize: 18, fontWeight: 850 }}>
                                     {formatCurrency(totals.prevDelta)} {oneDayPct !== null ? `(${formatPercent(oneDayPct)})` : ''}
                                 </Typography>
@@ -100,21 +97,19 @@ export default function SummaryCard({ id, totals, latestDate, month1Label, month
 
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: '1fr' }, gap: 1.25 }}>
                         <MetricTile label="Overall return" help="How much your portfolio has gained or lost compared with the money you invested." value={returnPct !== null ? formatPercent(returnPct) : '-'} helper={formatCurrency(totals.profit)} tone={positiveReturn ? 'positive' : 'negative'} icon={positiveReturn ? <TrendingUpIcon fontSize="small" /> : <TrendingDownIcon fontSize="small" />} />
-                        <MetricTile label="Today's change" help="How much the portfolio changed compared with the previous available NAV date." value={oneDayPct !== null ? formatPercent(oneDayPct) : '-'} helper={formatCurrency(totals.prevDelta)} tone={positiveDay ? 'positive' : 'negative'} icon={trendIcon} />
+                        <MetricTile label="Latest change" help="How much the portfolio changed compared with the previous available NAV date." value={oneDayPct !== null ? formatPercent(oneDayPct) : '-'} helper={formatCurrency(totals.prevDelta)} tone={positiveDay ? 'positive' : 'negative'} icon={trendIcon} />
                     </Box>
                 </Box>
 
                 <Box sx={{ mt: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                        <Typography sx={{ color: 'text.primary', fontSize: 14, fontWeight: 900 }}>Estimated value trend</Typography>
-                        <Tooltip title={estimatedTrendHelp}>
-                            <InfoOutlinedIcon sx={{ color: 'text.secondary', fontSize: 16 }} />
-                        </Tooltip>
+                        <Typography sx={{ color: 'text.primary', fontSize: 14, fontWeight: 900 }}>Estimated past value</Typography>
+                        <InfoTooltip title={estimatedTrendHelp} ariaLabel="Estimated value trend explanation" size={15} />
                     </Box>
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 1.25 }}>
-                        <MetricTile label={month1Label || '1 month'} value={formatCurrency(totals.month1)} helper="Today’s units on this date" help={estimatedTrendHelp} icon={<CalendarTodayIcon fontSize="small" />} />
-                        <MetricTile label={month2Label || '2 months'} value={formatCurrency(totals.month2)} helper="Today’s units on this date" help={estimatedTrendHelp} icon={<SavingsIcon fontSize="small" />} />
-                        <MetricTile label={month3Label || '3 months'} value={formatCurrency(totals.month3)} helper="Today’s units on this date" help={estimatedTrendHelp} icon={<AccountBalanceWalletIcon fontSize="small" />} />
+                        <MetricTile label={month1Label || '1 month'} value={formatCurrency(totals.month1)} helper="Current units at past NAV" help={estimatedTrendHelp} icon={<CalendarTodayIcon fontSize="small" />} />
+                        <MetricTile label={month2Label || '2 months'} value={formatCurrency(totals.month2)} helper="Current units at past NAV" help={estimatedTrendHelp} icon={<SavingsIcon fontSize="small" />} />
+                        <MetricTile label={month3Label || '3 months'} value={formatCurrency(totals.month3)} helper="Current units at past NAV" help={estimatedTrendHelp} icon={<AccountBalanceWalletIcon fontSize="small" />} />
                     </Box>
                 </Box>
             </CardContent>
