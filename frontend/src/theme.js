@@ -11,20 +11,20 @@ const baseFont = [
 ].join(',');
 
 const fintechPalette = {
-    brand: '#2755e7',
-    brandDark: '#1f3fb8',
-    brandSoft: '#eef3ff',
-    ink: '#101828',
+    brand: '#3157d8',
+    brandDark: '#17346f',
+    brandSoft: '#eef4ff',
+    ink: '#142033',
     muted: '#667085',
     subtle: '#98a2b3',
-    canvas: '#f4f7fb',
+    canvas: '#f6f8fb',
     surface: '#ffffff',
-    surfaceMuted: '#f8fafc',
-    line: '#e4eaf2',
-    success: '#0f9f6e',
-    danger: '#d92d20',
-    warning: '#b7791f',
-    info: '#2755e7'
+    surfaceMuted: '#f8fafb',
+    line: '#e8edf4',
+    success: '#0b8f69',
+    danger: '#c93c35',
+    warning: '#a76a18',
+    info: '#3157d8'
 };
 
 const shadows = [
@@ -61,13 +61,13 @@ export function buildAppTheme() {
         },
         typography: {
             fontFamily: baseFont,
-            h1: { fontWeight: 850, letterSpacing: 0, lineHeight: 1.08 },
-            h2: { fontWeight: 820, letterSpacing: 0, lineHeight: 1.16 },
-            h3: { fontWeight: 800, letterSpacing: 0, lineHeight: 1.2 },
-            h4: { fontWeight: 780, letterSpacing: 0, lineHeight: 1.22 },
-            h5: { fontWeight: 750, letterSpacing: 0 },
-            h6: { fontWeight: 750, letterSpacing: 0 },
-            button: { textTransform: 'none', fontWeight: 760, letterSpacing: 0 },
+            h1: { fontWeight: 780, letterSpacing: 0, lineHeight: 1.08 },
+            h2: { fontWeight: 760, letterSpacing: 0, lineHeight: 1.16 },
+            h3: { fontWeight: 740, letterSpacing: 0, lineHeight: 1.2 },
+            h4: { fontWeight: 720, letterSpacing: 0, lineHeight: 1.22 },
+            h5: { fontWeight: 700, letterSpacing: 0 },
+            h6: { fontWeight: 700, letterSpacing: 0 },
+            button: { textTransform: 'none', fontWeight: 700, letterSpacing: 0 },
             body1: { lineHeight: 1.55 },
             body2: { lineHeight: 1.5 }
         },
@@ -79,8 +79,9 @@ export function buildAppTheme() {
                     body: {
                         backgroundColor: fintechPalette.canvas,
                         backgroundImage: [
-                            'radial-gradient(circle at 12% 0%, rgba(39, 85, 231, 0.10), transparent 34rem)',
-                            'linear-gradient(180deg, rgba(255,255,255,0.76), rgba(244,247,251,0))'
+                            'radial-gradient(circle at 16% 0%, rgba(49, 87, 216, 0.08), transparent 32rem)',
+                            'radial-gradient(circle at 86% 8%, rgba(15, 118, 110, 0.055), transparent 28rem)',
+                            'linear-gradient(180deg, rgba(255,255,255,0.84), rgba(246,248,251,0))'
                         ].join(',')
                     }
                 }
@@ -88,8 +89,8 @@ export function buildAppTheme() {
             MuiCard: {
                 styleOverrides: {
                     root: {
-                        border: `1px solid ${fintechPalette.line}`,
-                        boxShadow: '0 16px 44px rgba(16, 24, 40, 0.07)'
+                        border: `1px solid ${alpha(fintechPalette.line, 0.72)}`,
+                        boxShadow: '0 14px 42px rgba(16, 24, 40, 0.055)'
                     }
                 }
             },
@@ -140,7 +141,7 @@ export function buildAppTheme() {
             },
             MuiChip: {
                 styleOverrides: {
-                    root: { fontWeight: 760 }
+                    root: { fontWeight: 700 }
                 }
             }
         }

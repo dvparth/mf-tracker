@@ -96,6 +96,7 @@ export default function MFTracker({ user }) {
     const [aiLoading, setAiLoading] = useState(false);
     const [aiRefreshing, setAiRefreshing] = useState(false);
     const [aiError, setAiError] = useState(null);
+    const [aiExpanded, setAiExpanded] = useState(false);
 
 
     // Adapter selection is now handled by VITE_DATA_ADAPTER env var in mfAdapters.js
@@ -452,17 +453,17 @@ export default function MFTracker({ user }) {
             <Box component="main" aria-label="mutual-fund-tracker" ref={topRef} sx={(t) => ({
                 px: { xs: 2, sm: 3 },
                 py: { xs: 2.5, sm: 3 },
-                maxWidth: 1180,
+                maxWidth: 1240,
                 mx: 'auto'
             })}>
-                <Box component="header" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 2.5, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <Box component="header" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 2.25, flexDirection: { xs: 'column', sm: 'row' } }}>
                     <Box>
-                        <Chip label="Updated mutual fund dashboard" size="small" sx={{ fontWeight: 850, mb: 1, bgcolor: 'primary.main', color: 'primary.contrastText' }} />
-                        <Typography component="h1" sx={{ color: 'text.primary', fontWeight: 950, fontSize: { xs: 28, sm: 36 }, lineHeight: 1.08, letterSpacing: 0 }}>
+                        <Chip label="Portfolio intelligence" size="small" sx={{ fontWeight: 680, mb: 1, bgcolor: 'rgba(49,87,216,0.08)', color: 'primary.dark' }} />
+                        <Typography component="h1" sx={{ color: 'text.primary', fontWeight: 780, fontSize: { xs: 27, sm: 35 }, lineHeight: 1.08, letterSpacing: 0 }}>
                             {user?.name ? `${user.name}'s portfolio` : 'Portfolio dashboard'}
                         </Typography>
-                        <Typography component="p" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: { xs: 14, sm: 16 }, mt: 0.75 }}>
-                            Review key signals first. Open sections when you want NAV, units, and fund-level details.
+                        <Typography component="p" sx={{ color: 'text.secondary', fontWeight: 450, fontSize: { xs: 14, sm: 15.5 }, mt: 0.75, maxWidth: 660 }}>
+                            A calm view of allocation, movement, concentration, and fund-level signals.
                         </Typography>
                     </Box>
                     <Box role="group" aria-label="dashboard controls" sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
@@ -479,7 +480,7 @@ export default function MFTracker({ user }) {
                 </Suspense>
 
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '0.82fr 1.18fr' }, gap: 2, mb: 2 }}>
-                    <SectionCard title="Portfolio Health" eyebrow="At a glance">
+                    <SectionCard title="Portfolio Health" eyebrow="At a glance" variant="tinted">
                         <Box sx={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr)', gap: 2, alignItems: 'center' }}>
                             <Box sx={(theme) => ({
                                 width: 92,
@@ -487,42 +488,43 @@ export default function MFTracker({ user }) {
                                 borderRadius: '50%',
                                 display: 'grid',
                                 placeItems: 'center',
-                                border: '9px solid',
-                                borderColor: `${health.tone}.main`,
-                                bgcolor: '#ffffff'
+                                background: `conic-gradient(${theme.palette[health.tone].main} ${health.score * 3.6}deg, ${theme.palette.divider} 0deg)`,
+                                boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.8)'
                             })}>
-                                <Box sx={{ textAlign: 'center' }}>
-                                    <Typography sx={{ fontSize: 25, fontWeight: 950, lineHeight: 1 }}>{health.score}</Typography>
-                                    <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 800 }}>score</Typography>
+                                <Box sx={{ width: 68, height: 68, borderRadius: '50%', bgcolor: '#fff', display: 'grid', placeItems: 'center', textAlign: 'center' }}>
+                                    <Box>
+                                        <Typography sx={{ fontSize: 24, fontWeight: 760, lineHeight: 1 }}>{health.score}</Typography>
+                                        <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 650 }}>score</Typography>
+                                    </Box>
                                 </Box>
                             </Box>
                             <Box>
                                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.75, flexWrap: 'wrap' }}>
                                     <HealthAndSafetyOutlinedIcon color={health.tone} fontSize="small" />
-                                    <Typography sx={{ fontSize: 18, fontWeight: 900 }}>{health.status}</Typography>
+                                    <Typography sx={{ fontSize: 18, fontWeight: 760 }}>{health.status}</Typography>
                                     <InfoTooltip title="A simple guide based on diversification, concentration, and current return. It is not financial advice." ariaLabel="Portfolio health explanation" size={15} />
                                 </Stack>
                                 <Typography sx={{ color: 'text.secondary', fontSize: 13.5, lineHeight: 1.55 }}>
                                     Diversification is <b>{health.diversification.toLowerCase()}</b>, concentration is <b>{health.concentration.toLowerCase()}</b>, and the return trend is <b>{health.trend.toLowerCase()}</b>.
                                 </Typography>
                                 <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mt: 1.25 }}>
-                                    <Chip size="small" label={`${health.concentration} concentration`} />
-                                    <Chip size="small" label={`${health.diversification} diversification`} />
+                                    <Chip size="small" label={`${health.concentration} concentration`} sx={{ fontWeight: 650 }} />
+                                    <Chip size="small" label={`${health.diversification} diversification`} sx={{ fontWeight: 650 }} />
                                 </Box>
                             </Box>
                         </Box>
                     </SectionCard>
 
-                    <SectionCard title="Key Takeaways" eyebrow="What changed" action={<TipsAndUpdatesOutlinedIcon color="primary" />}>
+                    <SectionCard title="Key Takeaways" eyebrow="What changed" action={<TipsAndUpdatesOutlinedIcon color="primary" />} variant="quiet">
                         <Box sx={{ display: 'grid', gap: 1 }}>
                             {takeaways.map((item) => {
                                 const color = item.tone === 'positive' ? 'success.main' : item.tone === 'caution' ? 'warning.main' : 'primary.main';
                                 const Icon = item.tone === 'positive' ? TrendingUpIcon : item.tone === 'caution' ? WarningAmberIcon : InfoOutlinedIcon;
                                 return (
-                                    <Box key={item.title} sx={{ display: 'grid', gridTemplateColumns: '30px minmax(0, 1fr)', gap: 1.1, p: 1.15, borderRadius: 2, bgcolor: '#f8fafc' }}>
+                                    <Box key={item.title} sx={(theme) => ({ display: 'grid', gridTemplateColumns: '30px minmax(0, 1fr)', gap: 1.1, py: 1.05, borderBottom: `1px solid ${theme.palette.divider}`, '&:last-of-type': { borderBottom: 0 } })}>
                                         <Box sx={{ color, display: 'grid', placeItems: 'center' }}><Icon fontSize="small" /></Box>
                                         <Box>
-                                            <Typography sx={{ fontSize: 14, fontWeight: 850 }}>{item.title}</Typography>
+                                            <Typography sx={{ fontSize: 14, fontWeight: 720 }}>{item.title}</Typography>
                                             <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 0.2 }}>{item.text}</Typography>
                                         </Box>
                                     </Box>
@@ -533,7 +535,7 @@ export default function MFTracker({ user }) {
                 </Box>
 
                 {allocationItems.length ? (
-                    <SectionCard title="Portfolio Allocation" eyebrow="Where your money is invested" sx={{ mb: 2 }}>
+                    <SectionCard title="Portfolio Allocation" eyebrow="Where your money is invested" sx={{ mb: 2 }} variant="tinted">
                         <DonutChart items={allocationItems} total={totals.marketValue} centerLabel="Total value" centerValue={formatCurrency(totals.marketValue, { compact: true })} />
                     </SectionCard>
                 ) : null}
@@ -556,7 +558,7 @@ export default function MFTracker({ user }) {
                             </LoadingButton>
                         )}
                     >
-                            <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: -1, mb: 1.5 }}>AI-assisted observations based only on your portfolio data and available market context. Not financial advice.</Typography>
+                            <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: -0.75, mb: 1.25 }}>AI-assisted observations based only on your portfolio data and available market context. Not financial advice.</Typography>
                             {aiInsight?.context ? (
                                 <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 1.5 }}>
                                     {aiInsight.context.factsIncluded ? <Chip size="small" label="Portfolio data checked" sx={{ fontWeight: 800 }} /> : null}
@@ -581,18 +583,27 @@ export default function MFTracker({ user }) {
                             ) : null}
 
                             {aiInsight?.summary ? (
-                                <Typography sx={{ fontSize: { xs: 15, sm: 16 }, color: 'text.primary', lineHeight: 1.55, fontWeight: 750, mb: 1.5 }}>{aiInsight.summary}</Typography>
+                                <Typography sx={{ fontSize: { xs: 14.5, sm: 15.5 }, color: 'text.primary', lineHeight: 1.55, fontWeight: 620, mb: 1.35, maxWidth: 920 }}>{aiInsight.summary}</Typography>
                             ) : null}
 
                             {aiCards.length ? (
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' }, gap: 1.25 }}>
-                                    {aiCards.map((card, idx) => {
+                                <>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' }, gap: 1 }}>
+                                    {(aiExpanded ? aiCards : aiCards.slice(0, 2)).map((card, idx) => {
                                         const relatedNames = Array.isArray(card.relatedSchemes) ? card.relatedSchemes.map(formatRelatedSchemeName) : [];
                                         return (
                                             <InsightCard key={`${card.type}-${idx}`} card={card} relatedNames={relatedNames} />
                                         );
                                     })}
                                 </Box>
+                                {aiCards.length > 2 ? (
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+                                        <Button size="small" onClick={() => setAiExpanded((value) => !value)}>
+                                            {aiExpanded ? 'Show fewer insights' : `Show ${aiCards.length - 2} more insights`}
+                                        </Button>
+                                    </Box>
+                                ) : null}
+                                </>
                             ) : (!aiLoading && !aiError ? (
                                 <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>AI insights are not available right now.</Typography>
                             ) : null)}
@@ -601,19 +612,19 @@ export default function MFTracker({ user }) {
 
                 {/* Holdings are managed on the dedicated /holdings page */}
 
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 2, mt: 2.5, mb: 1.25 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 2, mt: 2.35, mb: 1.1 }}>
                     <Box>
-                        <Typography component="h2" sx={{ fontSize: { xs: 18, sm: 20 }, fontWeight: 950 }}>Your Funds</Typography>
-                        <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.2 }}>Tap a fund to see NAV, units, fund ID, and estimated past values.</Typography>
+                        <Typography component="h2" sx={{ fontSize: { xs: 18, sm: 20 }, fontWeight: 760 }}>Your Funds</Typography>
+                        <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.2 }}>Compact rows show value, gain/loss, movement, and allocation first.</Typography>
                     </Box>
-                    <Chip label={`${sortedRows.length} funds`} size="small" sx={{ fontWeight: 850 }} />
+                    <Chip label={`${sortedRows.length} funds`} size="small" sx={{ fontWeight: 680 }} />
                 </Box>
 
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
                     {visibleRows.map(r => (
                         <Suspense key={r.scheme_code} fallback={<Box sx={{ display: 'flex', justifyContent: 'center', p: 1 }}><CircularProgress size={18} /></Box>}>
                             {/* Reserve approx height to avoid Cumulative Layout Shift when content loads */}
-                            <Box sx={{ minHeight: 78 }}>
+                            <Box sx={{ minHeight: { xs: 68, sm: 72 } }}>
                                 <SchemeAccordion r={r} totalValue={totals.marketValue} month1Label={month1Label} month2Label={month2Label} month3Label={month3Label} />
                             </Box>
                         </Suspense>

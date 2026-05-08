@@ -27,44 +27,49 @@ export default function InsightCard({ card, relatedNames = [] }) {
     const [expanded, setExpanded] = useState(false);
     const severity = card?.severity || 'neutral';
     const tone = severity === 'positive' ? 'success.main' : severity === 'caution' ? 'warning.main' : 'primary.main';
+    const toneKey = severity === 'positive' ? 'success' : severity === 'caution' ? 'warning' : 'primary';
     const message = card?.message || '';
-    const shortMessage = message.length > 120 ? `${message.slice(0, 118).trim()}...` : message;
-    const hasMore = message.length > 120 || relatedNames.length > 0;
+    const shortMessage = message.length > 96 ? `${message.slice(0, 94).trim()}...` : message;
+    const hasMore = message.length > 96 || relatedNames.length > 0;
 
     return (
         <Box sx={(theme) => ({
             position: 'relative',
-            p: 1.75,
-            borderRadius: 2.5,
-            backgroundColor: '#ffffff',
-            border: `1px solid ${theme.palette.divider}`,
-            borderLeft: `4px solid ${theme.palette[severity === 'positive' ? 'success' : severity === 'caution' ? 'warning' : 'primary'].main}`,
-            boxShadow: '0 10px 26px rgba(15, 23, 42, 0.05)'
+            p: { xs: 1.35, sm: 1.55 },
+            borderRadius: 2,
+            background: `linear-gradient(180deg, ${alpha(theme.palette[toneKey].main, 0.045)}, rgba(255,255,255,0.86))`,
+            border: `1px solid ${alpha(theme.palette[toneKey].main, 0.12)}`,
+            boxShadow: '0 10px 28px rgba(15, 23, 42, 0.04)',
+            transition: 'transform 180ms ease, box-shadow 180ms ease',
+            '&:hover': {
+                transform: 'translateY(-1px)',
+                boxShadow: '0 16px 38px rgba(15, 23, 42, 0.07)'
+            }
         })}>
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.1 }}>
                 <Box sx={(theme) => ({
-                    width: 34,
-                    height: 34,
-                    borderRadius: 2,
+                    width: 30,
+                    height: 30,
+                    borderRadius: 1.5,
                     display: 'grid',
                     placeItems: 'center',
                     color: tone,
-                    bgcolor: alpha(theme.palette[severity === 'positive' ? 'success' : severity === 'caution' ? 'warning' : 'primary'].main, 0.10),
+                    bgcolor: alpha(theme.palette[toneKey].main, 0.09),
                     flexShrink: 0
                 })}>
                     {iconBySeverity[severity] || <ShieldOutlinedIcon fontSize="small" />}
                 </Box>
                 <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'center', mb: 0.7 }}>
-                        <Typography sx={{ color: 'text.primary', fontSize: 15, fontWeight: 950, lineHeight: 1.25 }}>{card.title}</Typography>
-                        <Chip label={typeLabel[card.type] || card.type || 'Insight'} size="small" sx={{ height: 22, fontSize: 10, fontWeight: 900, flexShrink: 0 }} />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'center', mb: 0.55 }}>
+                        <Typography sx={{ color: 'text.primary', fontSize: 14.5, fontWeight: 760, lineHeight: 1.25 }}>{card.title}</Typography>
+                        <Chip label={typeLabel[card.type] || card.type || 'Insight'} size="small" sx={{ height: 21, fontSize: 10, fontWeight: 700, flexShrink: 0, bgcolor: 'rgba(255,255,255,0.7)' }} />
                     </Box>
-                    <Typography sx={{ color: 'text.secondary', fontSize: 13, lineHeight: 1.55 }}>{expanded ? message : shortMessage}</Typography>
+                    <Typography sx={{ color: 'text.secondary', fontSize: 12.8, lineHeight: 1.5 }}>{expanded ? message : shortMessage}</Typography>
                     <Collapse in={expanded} timeout="auto" unmountOnExit>
-                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+                        <Box sx={(theme) => ({ mt: 1, pt: 1, borderTop: `1px solid ${alpha(theme.palette.divider, 0.72)}` })}>
                             {relatedNames.length ? (
                                 <Typography sx={{ color: 'text.secondary', fontSize: 12 }}>
-                                    Related funds: <Box component="span" sx={{ color: 'text.primary', fontWeight: 800 }}>{relatedNames.join(', ')}</Box>
+                                    Related funds: <Box component="span" sx={{ color: 'text.primary', fontWeight: 700 }}>{relatedNames.join(', ')}</Box>
                                 </Typography>
                             ) : null}
                             <Typography sx={{ color: 'text.secondary', fontSize: 12, mt: relatedNames.length ? 0.75 : 0 }}>
@@ -73,8 +78,8 @@ export default function InsightCard({ card, relatedNames = [] }) {
                         </Box>
                     </Collapse>
                     {hasMore ? (
-                        <Button size="small" onClick={() => setExpanded((value) => !value)} sx={{ mt: 0.65, px: 0, minHeight: 28 }}>
-                            {expanded ? 'Show less' : 'What does this mean?'}
+                        <Button size="small" onClick={() => setExpanded((value) => !value)} sx={{ mt: 0.55, px: 0, minHeight: 26, fontSize: 12.5 }}>
+                            {expanded ? 'Less detail' : 'Details'}
                         </Button>
                     ) : null}
                 </Box>
