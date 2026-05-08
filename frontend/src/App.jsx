@@ -16,6 +16,7 @@ import Tooltip from '@mui/material/Tooltip';
 import './index.css';
 import MFTracker from './components/MFTracker';
 import HoldingsPage from './components/HoldingsPage';
+import { AboutPage, PrivacyPage, TermsPage } from './components/LegalPages';
 import Login from './auth/Login';
 import { useAuth } from './auth/useAuth';
 import { fetchWithCsrf, resetCsrfToken } from './auth/csrf';
@@ -53,6 +54,8 @@ function App() {
 
     const theme = buildAppTheme();
     const isHoldings = location.pathname === '/holdings';
+    const isLegalPage = ['/about', '/privacy', '/terms'].includes(location.pathname);
+    const legalCloseTo = user ? '/' : '/login';
     const renderProtected = (element) => {
         if (user) return element;
         if (loading) return <Login checkingSession />;
@@ -68,7 +71,7 @@ function App() {
                     backdropFilter: 'blur(18px)',
                     backgroundColor: alpha(t.palette.background.default, 0.82)
                 })}>
-                    <Toolbar sx={{ maxWidth: 1180, width: '100%', mx: 'auto', px: { xs: 1.5, sm: 3 }, minHeight: { xs: 60, sm: 72 }, display: 'flex', justifyContent: 'space-between', gap: { xs: 1, sm: 2 } }}>
+                    <Toolbar sx={{ maxWidth: 1240, width: '100%', mx: 'auto', px: { xs: 1.5, sm: 3 }, minHeight: { xs: 60, sm: 72 }, display: 'flex', justifyContent: 'space-between', gap: { xs: 1, sm: 2 } }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2.5 }, minWidth: 0 }}>
                             <Box
                                 aria-hidden="true"
@@ -153,9 +156,37 @@ function App() {
 
                 <Routes>
                     <Route path="/login" element={<Login />} />
+                    <Route path="/about" element={<AboutPage closeTo={legalCloseTo} />} />
+                    <Route path="/privacy" element={<PrivacyPage closeTo={legalCloseTo} />} />
+                    <Route path="/terms" element={<TermsPage closeTo={legalCloseTo} />} />
                     <Route path="/holdings" element={renderProtected(<HoldingsPage />)} />
                     <Route path="/" element={renderProtected(<MFTracker user={user} />)} />
                 </Routes>
+                <Box component="footer" sx={(theme) => ({
+                    maxWidth: 1240,
+                    mx: 'auto',
+                    px: { xs: 2, sm: 3 },
+                    py: { xs: 2.25, sm: 3 },
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    flexWrap: 'wrap',
+                    borderTop: isLegalPage ? 0 : `1px solid ${alpha(theme.palette.divider, 0.64)}`
+                })}>
+                    <Typography sx={{ color: 'text.secondary', fontSize: 12.5 }}>MF Snapshot</Typography>
+                    <Box sx={{ display: 'flex', gap: { xs: 1.25, sm: 1.75 }, flexWrap: 'wrap' }}>
+                        {[
+                            ['About', '/about'],
+                            ['Privacy', '/privacy'],
+                            ['Terms', '/terms']
+                        ].map(([label, path]) => (
+                            <Button key={path} size="small" color="inherit" onClick={() => navigate(path)} sx={{ minHeight: 30, px: 0, color: 'text.secondary', fontWeight: 620 }}>
+                                {label}
+                            </Button>
+                        ))}
+                    </Box>
+                </Box>
             </Box>
         </ThemeProvider>
     );
