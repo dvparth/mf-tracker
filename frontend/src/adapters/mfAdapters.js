@@ -25,8 +25,10 @@ export async function fetchSchemeDataUsingAdapter(schemeOrSchemes) {
     const cacheKey = `${adapter}-${codes.sort().join(',')}`;
 
     if (backendRequestCache.has(cacheKey)) {
-        const cached = backendRequestCache.get(cacheKey);
-        return isArray ? cached : cached[0].data;
+        const cachedResults = await backendRequestCache.get(cacheKey);
+        if (isArray) return cachedResults;
+        const result = cachedResults.find(r => r.schemeCode === codes[0]);
+        return result ? result.data : null;
     }
 
     const backendURL = BACKEND_URL;
@@ -52,7 +54,15 @@ export async function fetchSchemeDataUsingAdapter(schemeOrSchemes) {
         const responseData = res.data;
 
         if (codes.length === 1) {
-            // Single response - wrap in array format for consistency
+            // Backend single responses are enveloped as { schemeCode, data }.
+            // Normalize to the same array shape used by batch responses.
+            if (responseData && typeof responseData === 'object' && ('data' in responseData || 'error' in responseData)) {
+                return [{
+                    schemeCode: String(responseData.schemeCode || codes[0]),
+                    data: responseData.data || null,
+                    ...(responseData.error ? { error: responseData.error } : {})
+                }];
+            }
             return [{ schemeCode: codes[0], data: responseData }];
         } else {
             // Multiple response - already in array format

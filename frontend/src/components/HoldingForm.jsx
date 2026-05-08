@@ -18,6 +18,12 @@ const SafeFeedbackSnackbar = (typeof FeedbackSnackbar === 'undefined' || Feedbac
     ? (({ open, message }) => open ? <div style={{ position: 'fixed', bottom: 8, left: '50%', transform: 'translateX(-50%)', background: '#333', color: '#fff', padding: '8px 12px', borderRadius: 6 }}>{message}</div> : null)
     : FeedbackSnackbar;
 
+function parseHoldingNumber(value) {
+    if (value === '' || value === undefined || value === null) return 0;
+    const parsed = Number.parseFloat(String(value).replace(/[^0-9.\-]/g, ''));
+    return Number.isFinite(parsed) ? parsed : NaN;
+}
+
 export default function HoldingForm({ onSaved, editing = null, onCancel = null }) {
     const [schemes, setSchemes] = useState([]);
     const [schemesLoading, setSchemesLoading] = useState(false);
@@ -95,7 +101,13 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
 
         const schemeCode = editing ? Number(editing.scheme_code) : Number(selected.scheme_code);
         if (!schemeCode) return;
-        const payload = { holdings: [{ scheme_code: schemeCode, principal: Number(principal || 0), unit: Number(unit || 0) }] };
+        const principalNum = parseHoldingNumber(principal);
+        const unitNum = parseHoldingNumber(unit);
+        if (!Number.isFinite(principalNum) || !Number.isFinite(unitNum)) {
+            setSnack({ severity: 'error', message: 'Enter valid numbers for amount and units' });
+            return;
+        }
+        const payload = { holdings: [{ scheme_code: schemeCode, principal: principalNum, unit: unitNum }] };
 
         setLoading(true);
         try {
@@ -106,7 +118,7 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
                 const res = await fetchWithCsrf(BACKEND_URL + `/user/holdings/${scheme}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ principal: principalNum, unit: unitNum })
+                    body: JSON.stringify(payload.holdings[0])
                 });
                 if (res.ok) {
                     const json = await res.json();

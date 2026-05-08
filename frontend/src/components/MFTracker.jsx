@@ -80,6 +80,17 @@ function buildTakeaways(rows, totals, health) {
     return takeaways.slice(0, 3);
 }
 
+function pickLatestDMYDate(rows) {
+    return rows.reduce((latest, row) => {
+        if (!row.latestDate) return latest;
+        const rowDate = parseDMY(row.latestDate);
+        const latestDate = latest ? parseDMY(latest) : null;
+        if (!rowDate) return latest;
+        if (!latestDate || rowDate.getTime() > latestDate.getTime()) return row.latestDate;
+        return latest;
+    }, null);
+}
+
 const SummaryCard = React.lazy(() => import('./SummaryCard'));
 const SchemeAccordion = React.lazy(() => import('./SchemeAccordion'));
 
@@ -227,7 +238,7 @@ export default function MFTracker({ user }) {
     useEffect(() => {
         if (!loading && !error && rows.length > 0) {
             // Compute portfolio state here since it's after data load
-            const latestDate = rows.reduce((acc, r) => r.latestDate && (!acc || r.latestDate > acc) ? r.latestDate : acc, null);
+            const latestDate = pickLatestDMYDate(rows);
             let monthTargets = [null, null, null];
             if (latestDate) {
                 const base = parseDMY(latestDate);
@@ -368,7 +379,7 @@ export default function MFTracker({ user }) {
         );
     }
 
-    const latestDate = rows.reduce((acc, r) => r.latestDate && (!acc || r.latestDate > acc) ? r.latestDate : acc, null);
+    const latestDate = pickLatestDMYDate(rows);
 
     // compute target dates relative to latestDate: 1,2,3 months back
     let monthTargets = [null, null, null];
