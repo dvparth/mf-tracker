@@ -129,7 +129,7 @@ async function triggerRapidBatchFetch(rapidKey, rapidHost) {
                     }
                 };
                 
-                const r = await axios.request(options);
+                const r = await axios.request({ ...options, timeout: 5000, maxRedirects: 0 });
                 const rapidLastResponse = Array.isArray(r && r.data) ? r.data : (r && r.data ? r.data : null);
                 resolve(rapidLastResponse);
             } catch (err) {
@@ -153,7 +153,10 @@ const adapters = {
         }
         
         const p = (async () => {
-            const res = await axios.get(`https://api.mfapi.in/mf/${code}`);
+            const res = await axios.get(`https://api.mfapi.in/mf/${code}`, {
+                timeout: 8000,
+                maxRedirects: 0
+            });
             const payload = res && res.data ? res.data : {};
             // mfapi returns { meta, data }
             return ensureCanonical({ entries: payload.data, meta: payload.meta });

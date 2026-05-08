@@ -8,6 +8,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import CircularProgress from '@mui/material/CircularProgress';
 import InputAdornment from '@mui/material/InputAdornment';
 import { formatFundName } from '../utils/formatters';
+import { fetchWithCsrf } from '../auth/csrf';
 
 const SafeLoadingButton = (typeof LoadingButton === 'undefined' || LoadingButton === null)
     ? (({ children, ...p }) => <Button {...p}>{children}</Button>)
@@ -101,10 +102,9 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
                 const scheme = editing.scheme_code;
                 const principalNum = principal === '' ? 0 : Number.parseFloat(String(principal).replace(/[,₹\s]/g, '')) || 0;
                 const unitNum = unit === '' ? 0 : Number.parseFloat(String(unit).replace(/[,\s]/g, '')) || 0;
-                const res = await fetch((process.env.REACT_APP_BACKEND_URL || '') + `/user/holdings/${scheme}`, {
+                const res = await fetchWithCsrf((process.env.REACT_APP_BACKEND_URL || '') + `/user/holdings/${scheme}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
                     body: JSON.stringify({ principal: principalNum, unit: unitNum })
                 });
                 if (res.ok) {
@@ -117,10 +117,9 @@ export default function HoldingForm({ onSaved, editing = null, onCancel = null }
                     setSnack({ severity: 'error', message: `Update failed: ${txt}` });
                 }
             } else {
-                const res = await fetch((process.env.REACT_APP_BACKEND_URL || '') + '/user/holdings', {
+                const res = await fetchWithCsrf((process.env.REACT_APP_BACKEND_URL || '') + '/user/holdings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
                     body: JSON.stringify(payload)
                 });
                 if (res.ok) {

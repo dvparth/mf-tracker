@@ -11,8 +11,85 @@ const { buildEnrichedPortfolioContext } = require('../services/portfolioContextS
 
 const insightCache = new Map();
 const MAX_CACHE_ENTRIES = 50;
+const MAX_SCHEMES = 50;
+const MAX_STRING_LENGTH = 180;
+const MAX_AMOUNT = 1_000_000_000_000;
 const CARD_TYPES = new Set(['performance', 'concentration', 'risk', 'watchpoint']);
 const SEVERITIES = new Set(['positive', 'neutral', 'caution']);
+
+function validationError(message) {
+  const error = new Error(message);
+  error.status = 400;
+  return error;
+}
+
+function cleanString(value, maxLength = MAX_STRING_LENGTH) {
+  if (value === undefined || value === null) return null;
+  return String(value).trim().slice(0, maxLength);
+}
+
+function cleanNumber(value, maxAbs = MAX_AMOUNT) {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || Math.abs(parsed) > maxAbs) {
+    throw validationError('Portfolio contains an invalid number.');
+  }
+  return parsed;
+}
+
+function cleanSchemeCode(value) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw validationError('Portfolio contains an invalid scheme code.');
+  }
+  return parsed;
+}
+
+function sanitizePortfolioDetails(rawDetails) {
+  if (!rawDetails || typeof rawDetails !== 'object' || Array.isArray(rawDetails)) {
+    throw validationError('Request body must contain portfolio details JSON.');
+  }
+
+  const portfolio = rawDetails.portfolio;
+  const schemes = rawDetails.schemes;
+  if (!portfolio || typeof portfolio !== 'object' || Array.isArray(portfolio)) {
+    throw validationError('Portfolio summary is required.');
+  }
+  if (!Array.isArray(schemes) || schemes.length === 0) {
+    throw validationError('At least one portfolio scheme is required.');
+  }
+  if (schemes.length > MAX_SCHEMES) {
+    throw validationError(`Maximum ${MAX_SCHEMES} schemes are allowed.`);
+  }
+
+  return {
+    portfolio: {
+      currentValue: cleanNumber(portfolio.currentValue),
+      investedAmount: cleanNumber(portfolio.investedAmount),
+      totalProfitLoss: cleanNumber(portfolio.totalProfitLoss),
+      oneDayChange: cleanNumber(portfolio.oneDayChange),
+      oneDayChangePct: cleanNumber(portfolio.oneDayChangePct, 100),
+      latestDate: cleanString(portfolio.latestDate, 24),
+    },
+    schemes: schemes.map((scheme) => {
+      if (!scheme || typeof scheme !== 'object' || Array.isArray(scheme)) {
+        throw validationError('Each scheme must be an object.');
+      }
+      return {
+        scheme_code: cleanSchemeCode(scheme.scheme_code),
+        scheme_name: cleanString(scheme.scheme_name) || '',
+        principal: cleanNumber(scheme.principal),
+        unit: cleanNumber(scheme.unit, 1_000_000_000),
+        currentNav: cleanNumber(scheme.currentNav, 10_000_000),
+        marketValue: cleanNumber(scheme.marketValue),
+        profit: cleanNumber(scheme.profit),
+        oneDayChange: cleanNumber(scheme.oneDayChange),
+        oneDayChangePct: cleanNumber(scheme.oneDayChangePct, 100),
+        latestDate: cleanString(scheme.latestDate, 24),
+      };
+    }),
+  };
+}
 
 function stableStringify(value) {
   if (Array.isArray(value)) {
@@ -83,13 +160,10 @@ function normalizeInsightPayload(rawPayload) {
 router.post('/', async (req, res) => {
   try {
     const { portfolio, refresh } = req.body;
-    const portfolioDetails = portfolio || Object.fromEntries(
+    const rawPortfolioDetails = portfolio || Object.fromEntries(
       Object.entries(req.body || {}).filter(([key]) => key !== 'refresh')
     );
-
-    if (!portfolioDetails || typeof portfolioDetails !== 'object' || Array.isArray(portfolioDetails) || Object.keys(portfolioDetails).length === 0) {
-      return res.status(400).json({ error: 'Request body must contain portfolio details JSON.' });
-    }
+    const portfolioDetails = sanitizePortfolioDetails(rawPortfolioDetails);
 
     const portfolioHash = getPortfolioHash(portfolioDetails);
     const cacheDate = new Date().toISOString().slice(0, 10);
@@ -101,7 +175,7 @@ router.post('/', async (req, res) => {
     if (!isGitHubModelsConfigured()) {
       return res.status(503).json({
         error: 'AI portfolio insights are not configured',
-        message: 'GITHUB_TOKEN is missing on the backend.',
+        message: 'AI insights are unavailable right now.',
       });
     }
 
@@ -129,12 +203,19 @@ router.post('/', async (req, res) => {
 
     return res.json(responseBody);
   } catch (error) {
-    console.error('[portfolioInsight] error', error?.message || error);
+    console.error('[portfolioInsight] error', error);
 
     const status = error?.status && Number.isInteger(error.status) ? error.status : 500;
+    const safeMessage = status === 400
+      ? error.message
+      : status === 502
+        ? 'AI insights returned an unexpected response. Please try again later.'
+        : status === 503
+          ? 'AI insights are unavailable right now.'
+          : 'AI insights could not be generated right now.';
     return res.status(status >= 400 && status < 600 ? status : 500).json({
       error: 'Unable to generate portfolio insight.',
-      message: error?.message || 'GitHub Models request failed.',
+      message: safeMessage,
     });
   }
 });

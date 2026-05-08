@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getCsrfToken, resetCsrfToken } from './csrf';
 
 export function useAuth() {
     const [user, setUser] = useState(null);
@@ -13,14 +14,18 @@ export function useAuth() {
                     if (data && data.authenticated) {
                         // ensure user has photo field (may be empty)
                         setUser({ id: data.user.id, name: data.user.name, email: data.user.email, photo: data.user.photo || '' });
+                        getCsrfToken({ force: true }).catch(() => resetCsrfToken());
                     } else {
                         setUser(null);
+                        resetCsrfToken();
                     }
                 } else {
                     setUser(null);
+                    resetCsrfToken();
                 }
             } catch (e) {
                 setUser(null);
+                resetCsrfToken();
             } finally {
                 setLoading(false);
             }

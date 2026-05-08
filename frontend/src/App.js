@@ -18,6 +18,7 @@ import MFTracker from './components/MFTracker';
 import HoldingsPage from './components/HoldingsPage';
 import Login from './auth/Login';
 import { useAuth } from './auth/useAuth';
+import { fetchWithCsrf, resetCsrfToken } from './auth/csrf';
 import { ThemeProvider, alpha } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { buildAppTheme } from './theme';
@@ -36,7 +37,8 @@ function App() {
     const logout = async () => {
         // close menu first
         handleMenuClose();
-        await fetch((process.env.REACT_APP_BACKEND_URL || '') + '/auth/logout', { method: 'POST', credentials: 'include' });
+        await fetchWithCsrf((process.env.REACT_APP_BACKEND_URL || '') + '/auth/logout', { method: 'POST' }).catch(() => {});
+        resetCsrfToken();
         setUser(null);
         navigate('/login');
     };

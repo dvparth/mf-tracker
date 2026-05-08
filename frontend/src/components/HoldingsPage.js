@@ -22,6 +22,7 @@ import SectionCard from './ui/SectionCard';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatFundName, fmtUnit } from '../utils/formatters';
 import { fetchSchemeDataUsingAdapter } from '../adapters/mfAdapters';
+import { fetchWithCsrf } from '../auth/csrf';
 
 function HoldingRow({ holding, fundName, totalPrincipal, onEdit, onAskDelete, disabled }) {
     const allocation = totalPrincipal ? (Number(holding.principal || 0) / totalPrincipal) * 100 : 0;
@@ -146,7 +147,7 @@ export default function HoldingsPage() {
     const remove = async (code) => {
         setLoading(true);
         try {
-            const res = await fetch((process.env.REACT_APP_BACKEND_URL || '') + '/user/holdings/' + code, { method: 'DELETE', credentials: 'include' });
+            const res = await fetchWithCsrf((process.env.REACT_APP_BACKEND_URL || '') + '/user/holdings/' + code, { method: 'DELETE' });
             if (res.ok) {
                 const json = await res.json();
                 setHoldings(json.holdings || []);

@@ -16,7 +16,8 @@ function normalizeScheme(raw) {
 async function searchMfApi(query) {
     const response = await axios.get('https://api.mfapi.in/mf/search', {
         params: { q: query },
-        timeout: 10000
+        timeout: 5000,
+        maxRedirects: 0
     });
     const data = Array.isArray(response.data) ? response.data : [];
     return data.map(normalizeScheme).filter(s => Number.isFinite(s.scheme_code) && s.scheme_name);
@@ -27,6 +28,9 @@ async function searchMfApi(query) {
 router.get('/', async (req, res) => {
     try {
         const query = String(req.query.q || '').trim();
+        if (query.length > 120) {
+            return res.status(400).json({ error: 'Search query is too long.' });
+        }
         const projection = { _id: 0, __v: 0 };
 
         if (query) {
@@ -52,7 +56,8 @@ router.get('/', async (req, res) => {
         const schemes = await Scheme.find({}, projection).lean().sort({ scheme_code: 1 }).limit(500).exec();
         return res.json({ schemes: schemes || [] });
     } catch (err) {
-        return res.status(500).json({ error: err.message });
+        console.error('[schemes] error', err);
+        return res.status(500).json({ error: 'Unable to load schemes.' });
     }
 });
 

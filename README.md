@@ -29,6 +29,9 @@ Required backend environment:
 
 - `MONGO_URI`
 - `JWT_SECRET`
+- `JWT_ISSUER`
+- `JWT_AUDIENCE`
+- `JWT_CSRF_AUDIENCE`
 - `FRONTEND_URL`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
@@ -53,12 +56,11 @@ npm start
 Required frontend environment:
 
 - `REACT_APP_BACKEND_URL`
+- `GENERATE_SOURCEMAP=false` for production builds
 
 Optional frontend environment:
 
 - `REACT_APP_DATA_ADAPTER`
-- `REACT_APP_RAPIDAPI_KEY`
-- `REACT_APP_RAPIDAPI_HOST`
 
 ## Scripts
 
@@ -93,3 +95,9 @@ Frontend and backend can still deploy independently from this monorepo:
 - Render backend root directory: `backend`
 
 Set each service's environment variables in the hosting provider. Do not commit `.env` files.
+
+Production security defaults:
+
+- Render backend: set `NODE_ENV=production` and `FRONTEND_URL=https://mf-snapshot.netlify.app`.
+- Netlify frontend: keep `GENERATE_SOURCEMAP=false`; `frontend/netlify.toml` defines browser security headers.
+- Keep provider credentials (`GITHUB_TOKEN`, `RAPIDAPI_KEY`, Google secret, Mongo URI) backend-only.

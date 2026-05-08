@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
@@ -11,6 +12,7 @@ const portfolioInsightRoutes = require('./routes/portfolioInsight');
 const setupPassport = require('./auth/passport');
 const cookieParser = require('cookie-parser');
 const { requireAuth } = require('./middleware/authMiddleware');
+const { generalLimiter, authLimiter, dataLimiter, aiLimiter } = require('./middleware/rateLimits');
 
 const app = express();
 // When running behind a proxy (Render, Heroku, etc.) trust the first proxy so
@@ -18,37 +20,29 @@ const app = express();
 if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
-// Configure CORS to allow the frontend to send/receive cookies for auth.
-// Support both local development and the deployed frontend by allowing
-// a small whitelist and echoing allowed origins.
-const allowedOrigins = [process.env.FRONTEND_URL, 'http://localhost:3000', 'https://localhost:3000'].filter(Boolean);
+function isLocalDevelopmentOrigin(origin) {
+  if (process.env.NODE_ENV === 'production') return false;
+  try {
+    const parsed = new URL(origin);
+    return ['localhost', '127.0.0.1', '::1'].includes(parsed.hostname);
+  } catch (e) {
+    return false;
+  }
+}
+
+// Configure CORS to allow credentialed requests only from exact trusted origins.
+const allowedOrigins = [process.env.FRONTEND_URL, 'http://localhost:3000', 'https://localhost:3000']
+  .filter(Boolean)
+  .map((origin) => origin.replace(/\/$/, ''));
 const corsOptions = {
   origin: function (origin, callback) {
-    console.log('[CORS] Request origin:', origin);
-    // Allow null/file origins using wildcard so local HTML files are accepted.
-    if (!origin || origin === 'null' || origin === 'file://' || (origin && origin.startsWith('file://'))) {
-      console.log('[CORS] Allowing null/file origin as wildcard');
-      return callback(null, '*');
-    }
-
-    // In development, allow all localhost origins (any port, http or https).
-    if (process.env.NODE_ENV === 'development') {
+    if (!origin) {
       return callback(null, true);
     }
 
-    // Allow explicit configured origins.
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    if (allowedOrigins.includes(normalizedOrigin) || isLocalDevelopmentOrigin(normalizedOrigin)) {
       return callback(null, true);
-    }
-
-    // Allow Netlify-hosted frontend previews and sites (*.netlify.app)
-    try {
-      const lc = origin.toLowerCase();
-      if (lc.endsWith('.netlify.app')) {
-        return callback(null, true);
-      }
-    } catch (e) {
-      // ignore
     }
 
     const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
@@ -57,15 +51,17 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200
 };
+app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(generalLimiter);
 app.use(cors(corsOptions));
 // Ensure preflight requests are handled
-app.options('*', cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
-app.use(express.json());
+app.use(express.json({ limit: '200kb' }));
 app.use(cookieParser());
 // Simple request logger to help debug routing on hosted platforms (visible in service logs)
 app.use((req, res, next) => {
-  console.log(`[req] ${Date.now()} ${req.method} ${req.originalUrl}`);
+  console.log(`[req] ${Date.now()} ${req.method} ${req.path}`);
   next();
 });
 // Initialize passport strategies
@@ -73,16 +69,15 @@ setupPassport();
 app.use(require('passport').initialize());
 
 // Auth routes
-app.use('/auth', authRoutes);
+app.use('/auth', authLimiter, authRoutes);
 
 // Schemes metadata and user holdings
-app.use('/schemes', schemesRoutes);
+app.use('/schemes', dataLimiter, schemesRoutes);
 app.use('/user/holdings', userHoldingsRoutes);
 
-// Public portfolio insight endpoint. This is intentionally left open.
-app.use('/api/portfolioInsight', portfolioInsightRoutes);
+app.use('/api/portfolioInsight', requireAuth, aiLimiter, portfolioInsightRoutes);
 
-app.use('/api/mf', mfRoutes);
+app.use('/api/mf', dataLimiter, mfRoutes);
 
 // Simple health and root endpoints to help verify the server is running (useful in prod)
 app.get('/health', (req, res) => {
@@ -108,7 +103,7 @@ if (!MONGO_URI) {
   process.exit(1);
 }
 
-mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(MONGO_URI)
   .then(() => {
     console.log('MongoDB connected');
     // Start the HTTP server only after MongoDB has successfully connected
