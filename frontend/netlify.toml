@@ -5,7 +5,7 @@
 [build.environment]
   NODE_VERSION = "22"
   VITE_BACKEND_URL = "https://mf-tracker-9isa.onrender.com"
-  VITE_DATA_ADAPTER = "mfapi"
+  VITE_DATA_ADAPTER = "hybrid"
 
 [[redirects]]
   from = "/*"
