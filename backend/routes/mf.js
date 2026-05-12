@@ -69,7 +69,7 @@ async function handleSchemeRequest(req, res, useHybrid = false) {
 
             try {
                 const data = await fetchSchemePayload(schemeCode, useHybrid);
-                return { schemeCode, data };
+                return { schemeCode, source: data.source || (useHybrid ? 'rapidapi' : 'mfapi'), data };
             } catch (err) {
                 return { schemeCode, error: err.message || 'Failed to fetch scheme data' };
             }

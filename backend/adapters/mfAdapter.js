@@ -12,6 +12,7 @@ const axios = require('axios');
  * @typedef {Object} CanonicalPayload
  * @property {CanonicalEntry[]} entries
  * @property {CanonicalMeta} meta
+ * @property {'mfapi'|'rapidapi'|''} source
  */
 
 // Internal helper to ensure the adapter returns the canonical shape.
@@ -87,7 +88,7 @@ function ensureCanonical(payload) {
     
     const metaRaw = safe.meta || {};
     const meta = { scheme_name: metaRaw.scheme_name || metaRaw.name || '' };
-    return { entries, meta };
+    return { entries, meta, source: safe.source || '' };
 }
 
 // --- RapidAPI batching helpers (module-level) ---
@@ -159,7 +160,7 @@ const adapters = {
             });
             const payload = res && res.data ? res.data : {};
             // mfapi returns { meta, data }
-            return ensureCanonical({ entries: payload.data, meta: payload.meta });
+            return ensureCanonical({ entries: payload.data, meta: payload.meta, source: 'mfapi' });
         })();
         
         // store the promise so concurrent callers share it
@@ -200,6 +201,7 @@ const adapters = {
 
         let entries = Array.isArray(mfPayload.entries) ? mfPayload.entries.slice() : [];
         let meta = mfPayload.meta || { scheme_name: '' };
+        let source = 'mfapi';
 
         if (rapidResp && Array.isArray(rapidResp) && rapidResp.length > 0) {
             // find the matching scheme code entry
@@ -223,10 +225,11 @@ const adapters = {
                 
                 // prefer meta from mfapi, else use rapid's name
                 if (!meta || !meta.scheme_name) meta = { scheme_name: found.Scheme_Name || '' };
+                source = 'rapidapi';
             }
         }
 
-        return ensureCanonical({ entries, meta });
+        return ensureCanonical({ entries, meta, source });
     }
 };
 
