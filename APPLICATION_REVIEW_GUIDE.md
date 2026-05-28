@@ -15,6 +15,17 @@ The system is split into:
 
 The user-facing product is not a broker or transaction platform. It is a read-only portfolio intelligence dashboard based on manually entered scheme, amount, and unit data.
 
+## Architectural Invariants
+
+These are the assumptions that most future changes should preserve:
+
+- Saved user data is only holdings metadata: scheme code, invested amount, units, and timestamps. The app does not store transaction history or fetched NAV history.
+- The backend owns authentication, cookies, CSRF validation, MongoDB persistence, external NAV/API calls, and AI insight generation.
+- The frontend owns portfolio math, visual presentation, estimated historical value, allocation, and the heuristic health score.
+- NAV data must be normalized to the canonical `{ entries, meta, source }` shape before dashboard code consumes it.
+- Financial language should stay explanatory. The app may surface observations, risks, concentration, and movement, but should not recommend buy/sell/switch/redeem/add-money actions.
+- The dashboard is built from current holdings and latest fetched NAV data. Any historical value shown is an estimate using current units, not a true historical account valuation.
+
 ## Repository Structure
 
 ```text
@@ -231,6 +242,8 @@ Frontend adapter behavior:
 - Defaults to `mfapi`.
 - Supports `mfapi` and `hybrid`.
 - Caches/deduplicates concurrent backend requests by adapter and scheme code list.
+- Batch requests are the normal dashboard path. `MFTracker` and `HoldingsPage` pass arrays of scheme objects and expect an array of `{ schemeCode, data, error? }` results.
+- For a single non-array scheme input, `frontend/src/adapters/mfAdapters.js` returns only the canonical `data` payload, not the backend envelope. Be careful if adding new single-scheme consumers.
 
 ### Portfolio Dashboard
 
@@ -253,6 +266,13 @@ Dashboard loading flow:
 4. Normalize rows for display.
 5. Compute current value, gain/loss, recent movement, estimated past values, allocation, and health.
 6. Trigger AI insight generation if portfolio data exists.
+
+Important dashboard state:
+
+- `rows`: normalized fund rows created from holdings plus NAV payloads.
+- `latestPortfolioStateRef`: the exact portfolio snapshot sent to the AI insight endpoint and reused for manual AI refresh.
+- `visibleCount`: progressive rendering count for fund accordions, initially eight.
+- AI state is separate from NAV/dashboard loading state, so dashboard data can render even when AI insight generation fails.
 
 Displayed dashboard sections:
 
@@ -296,6 +316,12 @@ Portfolio totals:
 - Current value: sum of valid fund market values.
 - Total profit/loss: sum of valid fund profit/loss.
 - Latest movement: sum of latest per-fund movements.
+
+Calculation duplication to watch:
+
+- `MFTracker.jsx` derives totals and the AI portfolio payload after data load, then derives display totals again during render.
+- `SummaryCard.jsx` and `SchemeAccordion.jsx` calculate percentages from the values they receive.
+- If changing calculation semantics, update all three places together and adjust the frontend test fixture expectations.
 
 Estimated past values:
 
@@ -393,6 +419,8 @@ Important behavior:
 - If `GITHUB_TOKEN` is missing, the endpoint returns 503 with a user-safe unavailable message.
 - The model is instructed not to provide buy/sell/switch/redeem/add-money recommendations.
 - The model is instructed not to invent news, benchmarks, categories, or causes.
+- The frontend currently posts AI insight requests without a CSRF token because the endpoint is authenticated and non-persistent. If the endpoint ever stores user-visible data or mutates state, add CSRF.
+- The backend sanitizes the submitted portfolio snapshot before prompt construction. Maximum submitted schemes for AI insight is 50.
 
 ### Market Context For AI
 
@@ -940,6 +968,32 @@ Important user-facing error behavior:
 - AI failures show safe messages.
 - Missing AI configuration returns a friendly unavailable state.
 
+## Critical Data Boundaries
+
+### Authentication Boundary
+
+- Browser authentication is represented by the `mf_auth` HttpOnly cookie.
+- `frontend/src/auth/useAuth.js` determines session state only through `GET /auth/me`.
+- `frontend/src/auth/csrf.js` lazily fetches and caches the CSRF token. `fetchWithCsrf` should be used for authenticated persisted mutations.
+
+### Persistence Boundary
+
+- MongoDB stores users, user holdings, and scheme metadata.
+- Fetched NAV histories are not persisted by this application.
+- AI insight cache is process memory only.
+
+### Provider Boundary
+
+- `backend/adapters/mfAdapter.js` is the backend normalization layer for NAV providers.
+- `frontend/src/adapters/mfAdapters.js` is only a client API wrapper and request deduper; it should not learn provider-specific response shapes.
+- `backend/services/portfolioContextService.js` may fetch broad market index context, but that context is explicitly not fund-specific news.
+
+### Presentation Boundary
+
+- Material UI components and `sx` props carry most of the layout.
+- Shared formatting lives in `frontend/src/utils/formatters.js`.
+- The app already has responsive/mobile-specific behavior in the app bar, holdings page, summary card, and fund accordions, so layout changes should be checked on mobile widths.
+
 ## Known Caveats And Things To Watch
 
 These are not necessarily bugs, but they matter during future work.
@@ -954,6 +1008,10 @@ These are not necessarily bugs, but they matter during future work.
 8. The backend exits immediately if `MONGO_URI` is missing.
 9. The app depends on external APIs: mfapi, optional RapidAPI, optional Yahoo Finance chart API, optional GitHub Models.
 10. The backend has no automated test coverage in the current repo.
+11. `MFTracker.jsx` duplicates some portfolio derivation for AI payload construction and render-time display. Keep these aligned.
+12. `HoldingForm.jsx` has some redundant local parsing variables in the edit branch; backend validation is still the source of truth.
+13. NAV request deduplication caches promises in memory on both frontend and backend. Failed mfapi requests are evicted, but successful entries live for the current process/session.
+14. Backend request logging in `backend/server.js` logs every request path. That is useful for hosted debugging but can be noisy.
 
 ## Where To Change Common Things
 
@@ -963,6 +1021,7 @@ Start here:
 
 - `backend/routes/userHoldings.js`
 - `frontend/src/components/HoldingForm.jsx`
+- `frontend/src/components/HoldingsPage.jsx`
 
 ### Change Dashboard Calculations
 
@@ -971,6 +1030,8 @@ Start here:
 - `frontend/src/components/MFTracker.jsx`
 - `frontend/src/components/SummaryCard.jsx`
 - `frontend/src/components/SchemeAccordion.jsx`
+- `frontend/src/utils/formatters.js`
+- `frontend/src/components/__tests__/MFTracker.test.jsx`
 
 ### Change NAV Provider Behavior
 
@@ -1063,6 +1124,8 @@ When reviewing future changes, check:
 - Does it affect NAV canonical shape?
 - Does it depend on an external provider?
 - Does it alter AI prompts, schema, or safety boundaries?
+- Does it cross the frontend/backend responsibility boundary?
+- Does it change the shape of `rows`, holdings, NAV payloads, or the AI portfolio snapshot?
 - Does it preserve mobile layout?
 - Does it handle empty, loading, and error states?
 - Does it keep financial language explanatory rather than advisory?
