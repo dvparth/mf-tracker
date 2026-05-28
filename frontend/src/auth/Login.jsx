@@ -310,6 +310,21 @@ export default function Login({ checkingSession = false }) {
                             >
                                 Continue with Google
                             </Button>
+                            <Button
+                                href="/demo"
+                                variant="outlined"
+                                size="large"
+                                fullWidth
+                                sx={{
+                                    height: 46,
+                                    borderRadius: 2,
+                                    fontSize: 14,
+                                    fontWeight: 720,
+                                    mt: 1
+                                }}
+                            >
+                                View demo portfolio
+                            </Button>
 
                             <Divider sx={{ my: 1.65 }} />
 

@@ -79,10 +79,10 @@ describe('MFTracker', () => {
         render(<MFTracker user={mockUser} darkMode={false} setDarkMode={() => { }} />);
 
         // loader should show initially
-        expect(screen.getByRole('progressbar')).toBeInTheDocument();
+        expect(screen.getByLabelText('Loading portfolio')).toBeInTheDocument();
 
         // wait for the data to load and the SummaryCard to appear
-        await waitFor(() => expect(screen.queryByRole('progressbar')).not.toBeInTheDocument());
+        await waitFor(() => expect(screen.queryByLabelText('Loading portfolio')).not.toBeInTheDocument());
 
         // Summary header (owner name) should be present
         expect(screen.getByText(/Test User/i)).toBeInTheDocument();
@@ -95,7 +95,7 @@ describe('MFTracker', () => {
         userEvent.click(refreshBtn);
 
         // After clicking refresh, progress indicator may appear; ensure it resolves
-        await waitFor(() => expect(screen.queryByRole('progressbar')).not.toBeInTheDocument());
+        await waitFor(() => expect(screen.queryByLabelText('Loading portfolio')).not.toBeInTheDocument());
 
         // restore fetch
         global.fetch = originalFetch;

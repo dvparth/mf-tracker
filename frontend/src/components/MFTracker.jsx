@@ -94,7 +94,7 @@ function pickLatestDMYDate(rows) {
 const SummaryCard = React.lazy(() => import('./SummaryCard'));
 const SchemeAccordion = React.lazy(() => import('./SchemeAccordion'));
 
-export default function MFTracker({ user }) {
+export default function MFTracker({ user, demo = false }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -159,7 +159,11 @@ export default function MFTracker({ user }) {
         try {
             // Load user's tracked holdings and fetch NAVs using adapters. Do not call /schemes here.
             const backend = BACKEND_URL;
-            const holdingsRes = await fetch(`${backend}/user/holdings`, { credentials: 'include' });
+            const holdingsPath = demo ? '/demo/holdings' : '/user/holdings';
+            const holdingsRes = await fetch(`${backend}${holdingsPath}`, { credentials: 'include' });
+            if (!holdingsRes.ok) {
+                throw new Error(demo ? 'Demo portfolio is not available yet.' : 'Unable to load holdings.');
+            }
             const userHoldings = (await holdingsRes.json().catch(() => ({ holdings: [] }))).holdings || [];
             // Build the tracked list from user holdings; adapter metadata (meta.scheme_name) will be used when available.
             const tracked = userHoldings.map(h => ({ scheme_code: h.scheme_code, principal: h.principal || 0, unit: h.unit || 0 }));
@@ -300,9 +304,11 @@ export default function MFTracker({ user }) {
                 }))
             };
             latestPortfolioStateRef.current = portfolioState;
-            fetchAIInsight(portfolioState);
+            if (!demo) {
+                fetchAIInsight(portfolioState);
+            }
         }
-    }, [loading, error, rows]);
+    }, [loading, error, rows, demo]);
 
     // Schedule the expensive data fetch during idle time so the browser can
     // paint the initial UI faster. Falls back to a short timeout if
@@ -474,15 +480,28 @@ export default function MFTracker({ user }) {
                             {user?.name ? `${user.name}'s portfolio` : 'Portfolio dashboard'}
                         </Typography>
                         <Typography component="p" sx={{ color: 'text.secondary', fontWeight: 450, fontSize: { xs: 14, sm: 15.5 }, mt: 0.75, maxWidth: 660 }}>
-                            A calm view of allocation, movement, concentration, and fund-level signals.
+                            {demo ? 'A read-only sample built with real mutual fund NAV data. Sign in to add and edit your own funds.' : 'A calm view of allocation, movement, concentration, and fund-level signals.'}
                         </Typography>
                     </Box>
                     <Box role="group" aria-label="dashboard controls" sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                        {demo ? (
+                            <Button variant="contained" size="small" onClick={() => window.location.assign('/login')}>
+                                Sign in to edit
+                            </Button>
+                        ) : null}
                         <Tooltip title="Refresh">
                             <LoadingButton aria-label="Refresh data" onClick={() => { setManualLoading(true); load().finally(() => setManualLoading(false)); }} startIcon={<RefreshIcon />} size="small" loading={manualLoading}>Refresh</LoadingButton>
                         </Tooltip>
                     </Box>
                 </Box>
+
+                {demo ? (
+                    <SectionCard title="Demo portfolio" eyebrow="Read-only sample" sx={{ mb: 2 }} variant="quiet">
+                        <Typography sx={{ color: 'text.secondary', fontSize: 14.5, lineHeight: 1.55 }}>
+                            This public demo uses a seeded MongoDB user with real Indian mutual fund scheme codes and live NAV data. Visitors cannot edit it, but signed-in users can add, update, and remove funds in their own private dashboard.
+                        </Typography>
+                    </SectionCard>
+                ) : null}
 
 
 
@@ -556,7 +575,7 @@ export default function MFTracker({ user }) {
                     <SectionCard
                         title={<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}><AutoAwesomeIcon fontSize="small" /> AI Insights</Box>}
                         eyebrow="Plain-English review"
-                        action={(
+                        action={demo ? null : (
                             <LoadingButton
                                 aria-label="Refresh AI insights"
                                 onClick={() => fetchAIInsight(latestPortfolioStateRef.current, { refresh: true })}
@@ -569,6 +588,12 @@ export default function MFTracker({ user }) {
                             </LoadingButton>
                         )}
                     >
+                            {demo ? (
+                                <Typography sx={{ fontSize: 14, color: 'text.secondary', lineHeight: 1.55 }}>
+                                    AI-assisted insights are available after sign-in for a private portfolio. This demo keeps the public view read-only and avoids generating AI output for anonymous visitors.
+                                </Typography>
+                            ) : (
+                                <>
                             <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: -0.75, mb: 1.25 }}>AI-assisted observations based only on your portfolio data and available market context. Not financial advice.</Typography>
                             {aiInsight?.context ? (
                                 <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 1.5 }}>
@@ -618,6 +643,8 @@ export default function MFTracker({ user }) {
                             ) : (!aiLoading && !aiError ? (
                                 <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>AI insights are not available right now.</Typography>
                             ) : null)}
+                                </>
+                            )}
                     </SectionCard>
                 </Box>
 

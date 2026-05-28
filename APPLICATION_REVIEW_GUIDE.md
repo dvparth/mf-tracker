@@ -135,6 +135,29 @@ Protected mutations include:
 - `PUT /user/holdings/:scheme_code`
 - `DELETE /user/holdings/:scheme_code`
 
+### Public Demo Portfolio
+
+The app has a public read-only demo route for posts, demos, and unauthenticated sharing.
+
+Relevant files:
+
+- `backend/config/demoPortfolio.js`
+- `backend/routes/demo.js`
+- `backend/scripts/seedDemoUser.js`
+- `frontend/src/App.jsx`
+- `frontend/src/components/MFTracker.jsx`
+- `frontend/src/auth/Login.jsx`
+
+Flow:
+
+1. `npm --prefix backend run seed:demo` upserts a real MongoDB `User` record with `googleId: "demo-public-user"`.
+2. Frontend route `/demo` renders `MFTracker` in demo mode without requiring Google login.
+3. `MFTracker` fetches public demo holdings from `GET /demo/holdings`.
+4. The dashboard fetches live NAV data normally and computes the same portfolio metrics as the authenticated dashboard.
+5. Visitors see a read-only banner and sign-in call to action. They cannot edit demo holdings.
+
+The public demo intentionally skips anonymous AI insight generation. AI insights remain available for authenticated private portfolios.
+
 ### Holdings Management
 
 Users can add, edit, and delete mutual fund holdings.
@@ -549,6 +572,31 @@ Requires auth and CSRF. Updates one holding by scheme code. If the holding does 
 
 Requires auth and CSRF. Removes one holding by scheme code.
 
+### Demo
+
+`GET /demo/holdings`
+
+Public. Returns the seeded read-only demo user holdings.
+
+```json
+{
+  "user": {
+    "name": "Demo Investor",
+    "email": "demo@mf-snapshot.local",
+    "photo": ""
+  },
+  "holdings": [
+    {
+      "scheme_code": 122639,
+      "principal": 316930,
+      "unit": 3631.45,
+      "addedAt": "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "readOnly": true
+}
+```
+
 ### Schemes
 
 `GET /schemes`
@@ -742,6 +790,7 @@ Defined in:
 Routes:
 
 - `/login`: Login and product preview.
+- `/demo`: Public read-only demo dashboard using the seeded MongoDB demo user.
 - `/`: Protected dashboard.
 - `/holdings`: Protected holdings management.
 - `/about`: Legal/product information.
@@ -1060,6 +1109,16 @@ Start here:
 - `backend/middleware/csrf.js`
 - `frontend/src/auth/useAuth.js`
 - `frontend/src/auth/csrf.js`
+
+### Change Public Demo Behavior
+
+Start here:
+
+- `backend/config/demoPortfolio.js`
+- `backend/routes/demo.js`
+- `backend/scripts/seedDemoUser.js`
+- `frontend/src/App.jsx`
+- `frontend/src/components/MFTracker.jsx`
 
 ### Change Look And Feel
 

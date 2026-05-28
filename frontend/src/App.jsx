@@ -159,6 +159,7 @@ function App() {
                     <Route path="/about" element={<AboutPage closeTo={legalCloseTo} />} />
                     <Route path="/privacy" element={<PrivacyPage closeTo={legalCloseTo} />} />
                     <Route path="/terms" element={<TermsPage closeTo={legalCloseTo} />} />
+                    <Route path="/demo" element={<MFTracker demo user={{ name: 'Demo Investor' }} />} />
                     <Route path="/holdings" element={renderProtected(<HoldingsPage />)} />
                     <Route path="/" element={renderProtected(<MFTracker user={user} />)} />
                 </Routes>

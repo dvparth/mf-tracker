@@ -9,6 +9,7 @@ const mfRoutes = require('./routes/mf');
 const userHoldingsRoutes = require('./routes/userHoldings');
 const schemesRoutes = require('./routes/schemes');
 const portfolioInsightRoutes = require('./routes/portfolioInsight');
+const demoRoutes = require('./routes/demo');
 const setupPassport = require('./auth/passport');
 const cookieParser = require('cookie-parser');
 const { requireAuth } = require('./middleware/authMiddleware');
@@ -74,6 +75,7 @@ app.use('/auth', authLimiter, authRoutes);
 // Schemes metadata and user holdings
 app.use('/schemes', dataLimiter, schemesRoutes);
 app.use('/user/holdings', userHoldingsRoutes);
+app.use('/demo', dataLimiter, demoRoutes);
 
 app.use('/api/portfolioInsight', requireAuth, aiLimiter, portfolioInsightRoutes);
 
