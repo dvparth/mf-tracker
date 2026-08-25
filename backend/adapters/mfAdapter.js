@@ -80,11 +80,16 @@ function ensureCanonical(payload) {
     const entries = entriesRaw.map(e => ({
         date: e && (e.date || e.Date) ? normalizeDate(e.date || e.Date) : null,
         nav: (() => {
-            // some apis use different keys like 'nav', 'Net_Asset_Value', 'close'
+            // some APIs use different keys like 'nav', 'Net_Asset_Value', or 'close'.
             const raw = e && (e.nav !== undefined ? e.nav : (e.Net_Asset_Value !== undefined ? e.Net_Asset_Value : (e.close !== undefined ? e.close : (e.Nav !== undefined ? e.Nav : null))));
             return sanitizeNav(raw);
         })(),
-    }));
+    })).filter((entry) => {
+        // A missing date/NAV (or a zero/invalid NAV) must never become the
+        // first entry: clients use that position as the current fund value.
+        const nav = Number.parseFloat(entry.nav);
+        return Boolean(entry.date) && Number.isFinite(nav) && nav > 0;
+    });
     
     const metaRaw = safe.meta || {};
     const meta = { scheme_name: metaRaw.scheme_name || metaRaw.name || '' };
@@ -206,21 +211,25 @@ const adapters = {
         if (rapidResp && Array.isArray(rapidResp) && rapidResp.length > 0) {
             // find the matching scheme code entry
             const codeNum = Number(scheme.scheme_code);
-            const found = rapidResp.find(item => Number(item.Scheme_Code) === codeNum) || rapidResp[0];
+            const found = rapidResp.find(item => Number(item.Scheme_Code) === codeNum);
             
             if (found) {
                 // RapidAPI date format can differ (e.g. '01-Oct-2025').
                 // Use ensureCanonical to normalize the latest entry so comparisons match mfapi's DD-MM-YYYY format.
                 const latestRaw = { date: found.Date, nav: String(found.Net_Asset_Value) };
                 const latestCanonicalPayload = ensureCanonical({ entries: [latestRaw] });
-                const latestEntry = (Array.isArray(latestCanonicalPayload.entries) && latestCanonicalPayload.entries[0]) ? latestCanonicalPayload.entries[0] : { date: null, nav: latestRaw.nav };
+                const latestEntry = Array.isArray(latestCanonicalPayload.entries) ? latestCanonicalPayload.entries[0] : null;
 
-                // prepend canonical latestEntry if its date is different from current first entry
-                if (!entries.length || entries[0].date !== latestEntry.date) {
-                    entries.unshift(latestEntry);
-                } else {
-                    // replace existing first entry with latest value to ensure consistency
-                    entries[0] = latestEntry;
+                // Some batch responses contain placeholder rows with empty fields.
+                // Only use RapidAPI data when it contains a usable date and NAV.
+                if (latestEntry) {
+                    // prepend canonical latestEntry if its date is different from current first entry
+                    if (!entries.length || entries[0].date !== latestEntry.date) {
+                        entries.unshift(latestEntry);
+                    } else {
+                        // replace existing first entry with latest value to ensure consistency
+                        entries[0] = latestEntry;
+                    }
                 }
                 
                 // prefer meta from mfapi, else use rapid's name

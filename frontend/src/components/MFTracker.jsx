@@ -186,8 +186,11 @@ export default function MFTracker({ user, demo = false }) {
                 if (result && !result.error) {
                     // adapter guarantees canonical shape: { entries: [{date, nav}], meta: { scheme_name } }
                     const payload = result.data || { entries: [], meta: { scheme_name: '' } };
-                    const entries = Array.isArray(payload.entries) ? payload.entries : [];
-                    // robustly parse NAVs and convert non-finite values to null to avoid NaN propagation
+                    const entries = (Array.isArray(payload.entries) ? payload.entries : []).filter((entry) => {
+                        const nav = Number.parseFloat(entry && entry.nav);
+                        return Boolean(entry && entry.date) && Number.isFinite(nav) && nav > 0;
+                    });
+                    // Use the first valid entry, including if a cached response has a blank leading row.
                     let nav0 = entries[0] && entries[0].nav ? Number.parseFloat(entries[0].nav) : null;
                     let nav1 = entries[1] && entries[1].nav ? Number.parseFloat(entries[1].nav) : null;
                     let nav2 = entries[2] && entries[2].nav ? Number.parseFloat(entries[2].nav) : null;
