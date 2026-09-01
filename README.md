@@ -41,8 +41,8 @@ Optional backend environment:
 - `GOOGLE_CALLBACK`
 - `RAPIDAPI_KEY`
 - `RAPIDAPI_HOST`
-- `GITHUB_TOKEN` - enables AI portfolio insights through GitHub Models
-- `GITHUB_MODEL` - optional GitHub Models model ID, defaults to `openai/gpt-4.1`
+- `GROQ_API_KEY` - enables AI portfolio insights through the Groq API
+- `GROQ_MODEL` - optional Groq model ID, defaults to `openai/gpt-oss-20b`
 
 ## Frontend Setup
 
@@ -84,7 +84,7 @@ npm run dev
 - `/user/holdings` - authenticated holdings CRUD
 - `/schemes` - DB-backed scheme metadata
 - `/api/mf` - mutual fund NAV lookup
-- `/api/portfolioInsight` - structured AI portfolio insight cards through GitHub Models
+- `/api/portfolioInsight` - structured AI portfolio insight cards through the Groq API
 
 ## Deployment Notes
 
@@ -99,4 +99,4 @@ Production security defaults:
 
 - Render backend: set `NODE_ENV=production` and `FRONTEND_URL=https://mf-snapshot.netlify.app`.
 - Netlify frontend: `frontend/netlify.toml` pins Node 22, disables source maps through Vite config, and defines browser security headers.
-- Keep provider credentials (`GITHUB_TOKEN`, `RAPIDAPI_KEY`, Google secret, Mongo URI) backend-only.
+- Keep provider credentials (`GROQ_API_KEY`, `RAPIDAPI_KEY`, Google secret, Mongo URI) backend-only.

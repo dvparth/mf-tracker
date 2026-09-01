@@ -2,10 +2,10 @@ const express = require('express');
 const crypto = require('crypto');
 const router = express.Router();
 const {
-  callGitHubModel,
+  callGroqModel,
   buildPortfolioPrompt,
   buildPortfolioSystemPrompt,
-  isGitHubModelsConfigured,
+  isGroqConfigured,
 } = require('../services/llmService');
 const { buildEnrichedPortfolioContext } = require('../services/portfolioContextService');
 
@@ -114,13 +114,33 @@ function setCachedInsight(portfolioHash, insight) {
 }
 
 function parseModelJson(rawText) {
-  try {
-    return JSON.parse(rawText);
-  } catch (e) {
-    const error = new Error('AI response was not valid JSON.');
-    error.status = 502;
-    throw error;
+  const text = typeof rawText === 'string' ? rawText.trim() : '';
+  const candidates = [text];
+
+  // Models can still wrap JSON in a Markdown fence or a short explanation,
+  // even when JSON output is requested. The schema validation below remains
+  // the final guardrail for the parsed object.
+  const unfenced = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  if (unfenced && unfenced !== text) candidates.push(unfenced);
+
+  const firstBrace = unfenced.indexOf('{');
+  const lastBrace = unfenced.lastIndexOf('}');
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    candidates.push(unfenced.slice(firstBrace, lastBrace + 1));
   }
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+      return typeof parsed === 'string' ? JSON.parse(parsed) : parsed;
+    } catch (e) {
+      // Try the next normalized candidate.
+    }
+  }
+
+  const error = new Error('AI response was not valid JSON.');
+  error.status = 502;
+  throw error;
 }
 
 function normalizeInsightPayload(rawPayload) {
@@ -172,17 +192,17 @@ router.post('/', async (req, res) => {
       return res.json(insightCache.get(cacheKey));
     }
 
-    if (!isGitHubModelsConfigured()) {
+    if (!isGroqConfigured()) {
       return res.status(503).json({
         error: 'AI portfolio insights are not configured',
-        message: 'AI insights are unavailable right now.',
+        message: 'AI insights are temporarily busy. Please try again in a moment.',
       });
     }
 
     const enrichedContext = await buildEnrichedPortfolioContext(portfolioDetails);
     const prompt = buildPortfolioPrompt(enrichedContext);
     const systemPrompt = buildPortfolioSystemPrompt();
-    const insightResult = await callGitHubModel({ prompt, systemPrompt });
+    const insightResult = await callGroqModel({ prompt, systemPrompt });
     const parsedInsight = normalizeInsightPayload(parseModelJson(insightResult.reply));
 
     const responseBody = {
@@ -211,7 +231,7 @@ router.post('/', async (req, res) => {
       : status === 502
         ? 'AI insights returned an unexpected response. Please try again later.'
         : status === 503
-          ? 'AI insights are unavailable right now.'
+          ? 'AI insights are temporarily busy. Please try again in a moment.'
           : 'AI insights could not be generated right now.';
     return res.status(status >= 400 && status < 600 ? status : 500).json({
       error: 'Unable to generate portfolio insight.',

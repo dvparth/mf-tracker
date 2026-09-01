@@ -88,7 +88,7 @@ app.get('/health', (req, res) => {
     status: 'ok',
     service: 'mf-tracker-api',
     timestamp: new Date().toISOString(),
-    aiProvider: 'github'
+    aiProvider: 'groq'
   });
 });
 app.get('/', (req, res) => {
